@@ -23,8 +23,8 @@ TEST pidof glusterd
 # We want fixed size bricks to test min-free-disk
 
 # Create 2 loop devices, one per brick.
-TEST   truncate -s 25M $B0/brick1
-TEST   truncate -s 25M $B0/brick2
+TEST   truncate -s 300M $B0/brick1
+TEST   truncate -s 300M $B0/brick2
 
 TEST   L1=`SETUP_LOOP $B0/brick1`
 TEST   MKFS_LOOP $L1
