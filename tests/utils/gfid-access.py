@@ -1,3 +1,4 @@
+"""Test utils for gfid-acess."""
 #
 # Copyright (c) 2011-2014 Red Hat, Inc. <http://www.redhat.com>
 # This file is part of GlusterFS.
@@ -9,33 +10,43 @@
 #
 
 from __future__ import print_function
+
 import os
+import random
 import sys
 import stat
-import time
 import struct
-import random
-import libcxattr
-
+import time
 from errno import EEXIST
+
+import libcxattr
 
 Xattr = libcxattr.Xattr()
 
+
 def umask():
+    """Wrap os.umask."""
     return os.umask(0)
 
+
 def _fmt_mknod(l):
+    """Wrap format string for mknod."""
     return "!II%dsI%dsIII" % (37, l+1)
 
+
 def _fmt_mkdir(l):
+    """Wrap format string for mkdir."""
     return "!II%dsI%dsII" % (37, l+1)
 
+
 def _fmt_symlink(l1, l2):
+    """Wrap format string for symlink."""
     return "!II%dsI%ds%ds" % (37, l1+1, l2+1)
 
 
 if sys.version_info > (3,):
     def entry_pack_reg(gf, bn, mo, uid, gid):
+        """Pack reg."""
         bn_encoded = bn.encode()
         blen = len(bn_encoded)
         return struct.pack(_fmt_mknod(blen),
@@ -44,13 +55,16 @@ if sys.version_info > (3,):
 
     # mkdir
     def entry_pack_dir(gf, bn, mo, uid, gid):
+        """Pack dir."""
         bn_encoded = bn.encode()
         blen = len(bn_encoded)
         return struct.pack(_fmt_mkdir(blen),
                            uid, gid, gf.encode(), mo, bn_encoded,
                            stat.S_IMODE(mo), umask())
+
     # symlink
     def entry_pack_symlink(gf, bn, lnk, st):
+        """Pack symlink."""
         bn_encoded = bn.encode()
         blen = len(bn_encoded)
         lnk_encoded = lnk.encode()
@@ -62,18 +76,21 @@ if sys.version_info > (3,):
 
 else:
     def entry_pack_reg(gf, bn, mo, uid, gid):
+        """Pack reg."""
         blen = len(bn)
         return struct.pack(_fmt_mknod(blen),
                            uid, gid, gf, mo, bn,
                            stat.S_IMODE(mo), 0, umask())
 
     def entry_pack_dir(gf, bn, mo, uid, gid):
+        """Pack dir."""
         blen = len(bn)
         return struct.pack(_fmt_mkdir(blen),
                            uid, gid, gf, mo, bn,
                            stat.S_IMODE(mo), umask())
 
     def entry_pack_symlink(gf, bn, lnk, mo, uid, gid):
+        """Pack symlink."""
         blen = len(bn)
         llen = len(lnk)
         return struct.pack(_fmt_symlink(blen, llen),
@@ -83,15 +100,15 @@ if __name__ == '__main__':
     if len(sys.argv) < 9:
         print(("USAGE: %s <mount> <pargfid|ROOT> <filename> <GFID> <file type>"
               " <uid> <gid> <file permission(octal str)>" % (sys.argv[0])))
-        sys.exit(-1) # nothing to do
-    mtpt       = sys.argv[1]
-    pargfid    = sys.argv[2]
-    fname      = sys.argv[3]
+        sys.exit(-1)  # nothing to do
+    mtpt = sys.argv[1]
+    pargfid = sys.argv[2]
+    fname = sys.argv[3]
     randomgfid = sys.argv[4]
-    ftype      = sys.argv[5]
-    uid        = int(sys.argv[6])
-    gid        = int(sys.argv[7])
-    perm       = int(sys.argv[8], 8)
+    ftype = sys.argv[5]
+    uid = int(sys.argv[6])
+    gid = int(sys.argv[7])
+    perm = int(sys.argv[8], 8)
 
     os.chdir(mtpt)
     if pargfid == 'ROOT':
@@ -105,10 +122,10 @@ if __name__ == '__main__':
     if ftype == 'file':
         mode = stat.S_IFREG | perm
         blob = entry_pack_reg(randomgfid, fname, mode, uid, gid)
-    elif ftype =='dir':
+    elif ftype == 'dir':
         mode = stat.S_IFDIR | perm
         blob = entry_pack_dir(randomgfid, fname, mode, uid, gid)
-    else: # not yet...
+    else:  # not yet...
         sys.exit(-1)
 
     if blob == None:
