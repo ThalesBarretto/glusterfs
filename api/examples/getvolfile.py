@@ -1,6 +1,8 @@
 #!/usr/bin/python3
+"""gfapi example for glfs_get_volfile()."""
 
 from __future__ import print_function
+
 import ctypes
 import ctypes.util
 
@@ -12,6 +14,7 @@ api.glfs_get_volfile.restype = ctypes.c_long
 
 
 def get_volfile(host, volume):
+    """Exercises glfs_get_volfile."""
     # This is set to a large value to exercise the "buffer not big enough"
     # path.  More realistically, you'd just start with a huge buffer.
     BUF_LEN = 0
@@ -30,6 +33,7 @@ def get_volfile(host, volume):
         return vlen
     return vbuf.value[:vlen]
 
+
 if __name__ == "__main__":
     import sys
 
@@ -42,4 +46,4 @@ if __name__ == "__main__":
         for line in res.split('\n'):
             print(line)
     except:
-        print("bad return value %s" % res)
+        print(f"bad return value {res}")
