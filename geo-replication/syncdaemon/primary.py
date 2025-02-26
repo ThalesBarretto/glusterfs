@@ -8,18 +8,18 @@
 # cases as published by the Free Software Foundation.
 #
 
-import os
-import sys
-import time
-import stat
-import logging
-import fcntl
-import string
 import errno
+import fcntl
+import logging
+import os
+import stat
+import string
+import sys
 import tarfile
-from errno import ENOENT, ENODATA, EEXIST, EACCES, EAGAIN, ESTALE, EINTR
-from threading import Condition, Lock
+import time
+from errno import EACCES, EAGAIN, EEXIST, EINTR, ENODATA, ENOENT, ESTALE
 from datetime import datetime
+from threading import Condition, Lock
 
 import gsyncdconfig as gconf
 import libgfchangelog
@@ -88,8 +88,7 @@ def edct(op, **ed):
 # The API!
 
 def gprimary_builder(excrawl=None):
-    """produce the GPrimary class variant corresponding
-       to sync mode"""
+    """Produce the GPrimary class variant corresponding to sync mode."""
     this = sys.modules[__name__]
     modemixin = gconf.get("special-sync-mode")
     if not modemixin:
@@ -123,7 +122,7 @@ def gprimary_builder(excrawl=None):
         syncengine = RsyncEngine
 
     class _GPrimary(crawlmixin, modemixin, sendmarkmixin,
-                   purgemixin, syncengine):
+                    purgemixin, syncengine):
         pass
 
     return _GPrimary
@@ -134,8 +133,7 @@ def gprimary_builder(excrawl=None):
 # sync modes
 
 class NormalMixin(object):
-
-    """normal geo-rep behavior"""
+    """Normal geo-rep behavior."""
 
     minus_infinity = URXTIME
 
@@ -220,7 +218,6 @@ class NormalMixin(object):
 
 
 class PartialMixin(NormalMixin):
-
     """a variant tuned towards operation with a primary
        that has partial info of the secondary (brick typically)"""
 
@@ -229,7 +226,6 @@ class PartialMixin(NormalMixin):
 
 
 class RecoverMixin(NormalMixin):
-
     """a variant that differs from normal in terms
        of ignoring non-indexed files"""
 
@@ -274,9 +270,10 @@ class PurgeNoopMixin(object):
 
 
 class TarSSHEngine(object):
+    """class TarSSHEngine.
 
-    """Sync engine that uses tar(1) piped over ssh(1)
-       for data transfers. Good for lots of small files.
+    Sync engine that uses tar(1) piped over ssh(1)
+    for data transfers. Good for lots of small files.
     """
 
     def a_syncdata(self, files):
@@ -310,8 +307,7 @@ class TarSSHEngine(object):
 
 
 class RsyncEngine(object):
-
-    """Sync engine that uses rsync(1) for data transfers"""
+    """Sync engine that uses rsync(1) for data transfers."""
 
     def a_syncdata(self, files):
         logging.debug(lf("files", files=files))
@@ -345,8 +341,7 @@ class RsyncEngine(object):
 
 
 class GPrimaryCommon(object):
-
-    """abstract class impementling primary role"""
+    """Abstract class impementling primary role."""
 
     KFGN = 0
     KNAT = 1
@@ -389,7 +384,7 @@ class GPrimaryCommon(object):
         return data
 
     def xtime(self, path, *a, **opts):
-        """get amended xtime
+        """Get amended xtime.
 
         as of amending, we can create missing xtime, or
         determine a valid value if what we get is expired
@@ -436,7 +431,7 @@ class GPrimaryCommon(object):
         self.unlinked_gfids = set()
 
     def init_keep_alive(cls):
-        """start the keep-alive thread """
+        """Start the keep-alive thread."""
         timo = gconf.get("secondary-timeout", 0)
         if timo > 0:
             def keep_alive():
@@ -448,8 +443,7 @@ class GPrimaryCommon(object):
             t.start()
 
     def mgmt_lock(self):
-
-        """Take management volume lock """
+        """Take management volume lock."""
         if rconf.mgmt_lock_fd:
             try:
                 fcntl.lockf(rconf.mgmt_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -609,7 +603,7 @@ class GPrimaryCommon(object):
 
     @staticmethod
     def humantime(*tpair):
-        """format xtime-like (sec, nsec) pair to human readable format"""
+        """Format xtime-like (sec, nsec) pair to human readable format."""
         ts = datetime.fromtimestamp(float('.'.join(str(n) for n in tpair))).\
             strftime("%Y-%m-%d %H:%M:%S")
         if len(tpair) > 1:
@@ -636,18 +630,18 @@ class GPrimaryCommon(object):
         return date
 
     def add_job(self, path, label, job, *a, **kw):
-        """insert @job function to job table at @path with @label"""
+        """Insert @job function to job table at @path with @label."""
         if self.jobtab.get(path) is None:
             self.jobtab[path] = []
         self.jobtab[path].append((label, a, lambda: job(*a, **kw)))
 
     def add_failjob(self, path, label):
-        """invoke .add_job with a job that does nothing just fails"""
+        """Invoke .add_job with a job that does nothing just fails."""
         logging.debug('salvaged: ' + label)
         self.add_job(path, label, lambda: False)
 
     def wait(self, path, *args):
-        """perform jobs registered for @path
+        """Perform jobs registered for @path.
 
         Reset jobtab entry for @path,
         determine success as the conjunction of
@@ -665,7 +659,7 @@ class GPrimaryCommon(object):
         return succeed
 
     def sendmark(self, path, mark, adct=None):
-        """update secondary side xtime for @path to primary side xtime
+        """Update secondary side xtime for @path to primary side xtime.
 
         also can send a setattr payload (see Server.setattr).
         """
@@ -684,8 +678,7 @@ class XCrawlMetadata(object):
 
 
 class GPrimaryChangelogMixin(GPrimaryCommon):
-
-    """ changelog based change detection and syncing """
+    """Changelog based change detection and syncing."""
 
     # index for change type and entry
     IDX_START = 0
@@ -814,9 +807,9 @@ class GPrimaryChangelogMixin(GPrimaryCommon):
                 # Takes care of scenarios with no hardlinks
                 if isinstance(st, int) and st == ENOENT:
                     logging.debug(lf('Entry not present on primary. Fixing gfid '
-                                    'mismatch in secondary. Deleting the entry',
-                                    retry_count=retry_count,
-                                    entry=repr(failure)))
+                                     'mismatch in secondary. Deleting the entry',
+                                     retry_count=retry_count,
+                                     entry=repr(failure)))
                     # Add deletion to fix_entry_ops list
                     if failure[2]['secondary_isdir']:
                         fix_entry_ops.append(
@@ -846,9 +839,9 @@ class GPrimaryChangelogMixin(GPrimaryCommon):
                         # Safe to ignore the failure as primary contains same
                         # file with same gfid. Remove entry from entries list
                         logging.debug(lf('Fixing gfid mismatch in secondary. '
-                                        ' Safe to ignore, take out entry',
-                                        retry_count=retry_count,
-                                        entry=repr(failure)))
+                                         ' Safe to ignore, take out entry',
+                                         retry_count=retry_count,
+                                         entry=repr(failure)))
                         remove_gfids.add(failure[0]['gfid'])
                         if op == 'RENAME':
                             fix_entry_ops.append(
@@ -868,17 +861,17 @@ class GPrimaryChangelogMixin(GPrimaryCommon):
                                                  realpath.split('/')[-1])
                         src_entry = pbname
                         logging.debug(lf('Fixing dir name/gfid mismatch in '
-                                        'secondary', retry_count=retry_count,
-                                        entry=repr(failure)))
+                                         'secondary', retry_count=retry_count,
+                                         entry=repr(failure)))
                         if src_entry == dst_entry:
                             # Safe to ignore the failure as primary contains
                             # same directory as in secondary with same gfid.
                             # Remove the failure entry from entries list
                             logging.debug(lf('Fixing dir name/gfid mismatch'
-                                            ' in secondary. Safe to ignore, '
-                                            'take out entry',
-                                            retry_count=retry_count,
-                                            entry=repr(failure)))
+                                             ' in secondary. Safe to ignore, '
+                                             'take out entry',
+                                             retry_count=retry_count,
+                                             entry=repr(failure)))
                             try:
                                 entries.remove(failure[0])
                             except ValueError:
@@ -889,9 +882,9 @@ class GPrimaryChangelogMixin(GPrimaryCommon):
                                                entry1=dst_entry, stat=st,
                                                link=None)
                             logging.debug(lf('Fixing dir name/gfid mismatch'
-                                            ' in secondary. Renaming',
-                                            retry_count=retry_count,
-                                            entry=repr(rename_dict)))
+                                             ' in secondary. Renaming',
+                                             retry_count=retry_count,
+                                             entry=repr(rename_dict)))
                             fix_entry_ops.append(rename_dict)
                     else:
                         # A hardlink file exists with different name or
@@ -899,9 +892,9 @@ class GPrimaryChangelogMixin(GPrimaryCommon):
                         # matching_disk_gfid check that the entry doesn't
                         # exist with same gfid so we can safely delete on secondary
                         logging.debug(lf('Fixing file gfid mismatch in secondary. '
-                                        'Hardlink/Rename Case. Deleting entry',
-                                        retry_count=retry_count,
-                                        entry=repr(failure)))
+                                         'Hardlink/Rename Case. Deleting entry',
+                                         retry_count=retry_count,
+                                         entry=repr(failure)))
                         fix_entry_ops.append(
                             edct('UNLINK',
                                  gfid=failure[2]['secondary_gfid'],
@@ -918,19 +911,19 @@ class GPrimaryChangelogMixin(GPrimaryCommon):
                 # parent directory.
                 if isinstance(st, int):
                     logging.debug(lf('Fixing ENOENT error in secondary. Parent '
-                                    'does not exist on primary. Safe to '
-                                    'ignore, take out entry',
-                                    retry_count=retry_count,
-                                    entry=repr(failure)))
+                                     'does not exist on primary. Safe to '
+                                     'ignore, take out entry',
+                                     retry_count=retry_count,
+                                     entry=repr(failure)))
                     try:
                         entries.remove(failure[0])
                     except ValueError:
                         pass
                 else:
                     logging.debug(lf('Fixing ENOENT error in secondary. Create '
-                                    'parent directory on secondary.',
-                                    retry_count=retry_count,
-                                    entry=repr(failure)))
+                                     'parent directory on secondary.',
+                                     retry_count=retry_count,
+                                     entry=repr(failure)))
                     realpath = os.readlink(os.path.join(rconf.args.local_path,
                                                         ".glusterfs",
                                                         pargfid[0:2],
@@ -1086,24 +1079,24 @@ class GPrimaryChangelogMixin(GPrimaryCommon):
                     if ty in ['MKNOD']:
                         mode = int(ec[2])
                         if mode & 0o1000:
-                                # Avoid stat'ing the file as it
-                                # may be deleted in the interim
-                                st = FreeObject(st_mode=int(ec[2]),
-                                                st_uid=int(ec[3]),
-                                                st_gid=int(ec[4]),
-                                                st_atime=0,
-                                                st_mtime=0)
+                            # Avoid stat'ing the file as it
+                            # may be deleted in the interim
+                            st = FreeObject(st_mode=int(ec[2]),
+                                            st_uid=int(ec[3]),
+                                            st_gid=int(ec[4]),
+                                            st_atime=0,
+                                            st_mtime=0)
 
-                                # So, it may be deleted, but still we are
-                                # append LINK? Because, the file will be
-                                # CREATED if source not exists.
-                                entries.append(edct('LINK', stat=st, entry=en,
-                                               gfid=gfid))
+                            # So, it may be deleted, but still we are
+                            # append LINK? Because, the file will be
+                            # CREATED if source not exists.
+                            entries.append(edct('LINK', stat=st, entry=en,
+                                           gfid=gfid))
 
-                                # Here, we have the assumption that only
-                                # tier-gfid.linkto causes this mknod. Add data
-                                datas.add(os.path.join(pfx, ec[0]))
-                                continue
+                            # Here, we have the assumption that only
+                            # tier-gfid.linkto causes this mknod. Add data
+                            datas.add(os.path.join(pfx, ec[0]))
+                            continue
 
                     # stat info. present in the changelog itself
                     entries.append(edct(ty, gfid=gfid, entry=en,
@@ -1244,7 +1237,7 @@ class GPrimaryChangelogMixin(GPrimaryCommon):
                     # don't need to keep iterating because we'll get the same
                     # result in all other attempts.
                     if ((num_entries == len(entries)) and
-                        (num_failures == len(failures))):
+                       (num_failures == len(failures))):
                         logging.info(lf("No more gfid mismatches can be fixed",
                                         entries=num_entries,
                                         failures=num_failures))
@@ -1461,8 +1454,8 @@ class GPrimaryChangelogMixin(GPrimaryCommon):
 
     def upd_entry_stime(self, stime):
         self.secondary.server.set_entry_stime(self.FLAT_DIR_HIERARCHY,
-                                          self.uuid,
-                                          stime)
+                                              self.uuid,
+                                              stime)
 
     def upd_stime(self, stime, path=None):
         if not path:
@@ -1565,7 +1558,7 @@ class GPrimaryChangeloghistoryMixin(GPrimaryChangelogMixin):
 
         end_time = int(time.time())
 
-        #as start of historical crawl marks Geo-rep worker restart
+        # as start of historical crawl marks Geo-rep worker restart
         if gconf.get("ignore-deletes"):
             logging.info(lf('ignore-deletes config option is set',
                          stime=data_stime))
@@ -1639,7 +1632,6 @@ class GPrimaryChangeloghistoryMixin(GPrimaryChangelogMixin):
 
 
 class GPrimaryXsyncMixin(GPrimaryChangelogMixin):
-
     """
     This crawl needs to be xtime based (as of now
     it's not. this is because we generate CHANGELOG
@@ -1677,10 +1669,8 @@ class GPrimaryXsyncMixin(GPrimaryChangelogMixin):
             if f.startswith("XSYNC-CHANGELOG"):
                 os.remove(os.path.join(self.tempdir, f))
 
-
     def crawl(self):
-        """
-        event dispatcher thread
+        """Event dispatcher thread.
 
         this thread dispatches either changelog or synchronizes stime.
         additionally terminates itself on receiving a 'finale' event
@@ -1742,7 +1732,7 @@ class GPrimaryXsyncMixin(GPrimaryChangelogMixin):
         self.comlist.append((mark, item))
 
     def sync_xsync(self, last):
-        """schedule a processing of changelog"""
+        """Schedule a processing of changelog."""
         self.close()
         if self.counter > 0:
             self.put('xsync', self.fname())
@@ -1751,7 +1741,7 @@ class GPrimaryXsyncMixin(GPrimaryChangelogMixin):
             time.sleep(1)  # make sure changelogs are 1 second apart
 
     def sync_stime(self, stime=None, last=False):
-        """schedule a stime synchronization"""
+        """Schedule a stime synchronization."""
         if stime:
             self.put('stime', stime)
         if last:
@@ -1775,8 +1765,7 @@ class GPrimaryXsyncMixin(GPrimaryChangelogMixin):
         return sticky
 
     def Xcrawl(self, path='.', xtr_root=None):
-        """
-        generate a CHANGELOG file consumable by process_change.
+        """Generate a CHANGELOG file consumable by process_change.
 
         secondary's xtime (stime) is _cached_ for comparisons across
         the filesystem tree, but set after directory synchronization.
@@ -1906,8 +1895,7 @@ class BoxClosedErr(Exception):
 
 
 class PostBox(list):
-
-    """synchronized collection for storing things thought of as "requests" """
+    """Synchronized collection for storing things thought of as "requests"."""
 
     def __init__(self, *a):
         list.__init__(self, *a)
@@ -1919,7 +1907,7 @@ class PostBox(list):
         self.done = False
 
     def wait(self):
-        """wait on requests to be processed"""
+        """Wait on requests to be processed."""
         self.lever.acquire()
         if not self.done:
             self.lever.wait()
@@ -1927,7 +1915,7 @@ class PostBox(list):
         return self.result
 
     def wakeup(self, data):
-        """wake up requestors with the result"""
+        """Wake up requestors with the result."""
         self.result = data
         self.lever.acquire()
         self.done = True
@@ -1935,7 +1923,7 @@ class PostBox(list):
         self.lever.release()
 
     def append(self, e):
-        """post a request"""
+        """Post a request."""
         self.lever.acquire()
         if not self.open:
             raise BoxClosedErr
@@ -1943,15 +1931,14 @@ class PostBox(list):
         self.lever.release()
 
     def close(self):
-        """prohibit the posting of further requests"""
+        """Prohibit the posting of further requests."""
         self.lever.acquire()
         self.open = False
         self.lever.release()
 
 
 class Syncer(object):
-
-    """a staged queue to relay rsync requests to rsync workers
+    """A staged queue to relay rsync requests to rsync workers.
 
     By "staged queue" its meant that when a consumer comes to the
     queue, it takes _all_ entries, leaving the queue empty.
@@ -1981,7 +1968,7 @@ class Syncer(object):
     """
 
     def __init__(self, secondary, sync_engine, resilient_errnos=[]):
-        """spawn worker threads"""
+        """Spawn worker threads."""
         self.log_err = False
         self.secondary = secondary
         self.lock = Lock()
@@ -1993,7 +1980,7 @@ class Syncer(object):
             t.start()
 
     def syncjob(self, job_id):
-        """the life of a worker"""
+        """Live the life of a worker."""
         while True:
             pb = None
             while True:
