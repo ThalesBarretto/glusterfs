@@ -8,17 +8,17 @@
 # cases as published by the Free Software Foundation.
 #
 
-import os
-import sys
-import pwd
-import time
-import fcntl
-import shutil
-import logging
 import errno
-import threading
-import subprocess
+import fcntl
+import logging
+import os
+import pwd
+import shutil
 import socket
+import subprocess
+import sys
+import threading
+import time
 from subprocess import PIPE
 from threading import Lock, Thread as baseThread
 from errno import (EACCES, EAGAIN, EPIPE, ENOTCONN, ENOMEM, ECONNABORTED,
@@ -28,14 +28,17 @@ import select as oselect
 from os import waitpid as owaitpid
 import xml.etree.ElementTree as XET
 from select import error as SelectError
+
 try:
     from cPickle import PickleError
 except ImportError:
     from pickle import PickleError
 
 from conf import GLUSTERFS_LIBEXECDIR, UUID_FILE
+
 sys.path.insert(1, GLUSTERFS_LIBEXECDIR)
 EVENTS_ENABLED = True
+
 try:
     from gfevents.eventtypes import GEOREP_FAULTY as EVENT_GEOREP_FAULTY
     from gfevents.eventtypes import GEOREP_ACTIVE as EVENT_GEOREP_ACTIVE
@@ -52,7 +55,6 @@ except ImportError:
 
 import gsyncdconfig as gconf
 from rconf import rconf
-
 from hashlib import sha256 as sha256
 
 ENOTSUP = getattr(errno, 'ENOTSUP', 'EOPNOTSUPP')
@@ -74,18 +76,22 @@ PERCENTAGE_ESCAPE_CHAR = "%25"
 
 final_lock = Lock()
 
-def sup(x, *a, **kw):
-    """a rubyesque "super" for python ;)
 
-    invoke caller method in parent class with given args.
+def sup(x, *a, **kw):
+    """Invoke caller method in parent class with given args.
+
+    a rubyesque "super" for python ;)
     """
     return getattr(super(type(x), x),
                    sys._getframe(1).f_code.co_name)(*a, **kw)
 
 
 def escape(s):
-    """the chosen flavor of string escaping, used all over
-       to turn whatever data to creatable representation"""
+    """Escape data to create representation.
+
+    the chosen flavor of string escaping, used all over
+    to turn whatever data to creatable representation
+    """
     return s.replace("/", "-").strip("-")
 
 
@@ -100,6 +106,7 @@ def unescape_space_newline(s):
             .replace(NEWLINE_ESCAPE_CHAR, "\n")\
             .replace(PERCENTAGE_ESCAPE_CHAR, "%")
 
+
 # gf_mount_ready() returns 1 if all subvols are up, else 0
 def gf_mount_ready():
     ret = errno_wrap(Xattr.lgetxattr,
@@ -107,12 +114,13 @@ def gf_mount_ready():
                      [ENOENT, ENOTSUP, ENODATA], [ENOMEM])
 
     if isinstance(ret, int):
-       logging.error("failed to get the xattr value")
-       return 1
+        logging.error("failed to get the xattr value")
+        return 1
     ret = ret.rstrip('\x00')
     if ret == "1":
-       return 1
+        return 1
     return 0
+
 
 def norm(s):
     if s:
@@ -120,8 +128,7 @@ def norm(s):
 
 
 def update_file(path, updater, merger=lambda f: True):
-    """update a file in a transaction-like manner"""
-
+    """Update a file in a transaction-like manner."""
     fr = fw = None
     try:
         fd = os.open(path, os.O_CREAT | os.O_RDWR)
@@ -151,9 +158,7 @@ def update_file(path, updater, merger=lambda f: True):
 
 
 def create_manifest(fname, content):
-    """
-    Create manifest file for SSH Control Path
-    """
+    """Create manifest file for SSH Control Path."""
     fd = None
     try:
         fd = os.open(fname, os.O_CREAT | os.O_RDWR)
@@ -168,12 +173,10 @@ def create_manifest(fname, content):
 
 
 def setup_ssh_ctl(ctld, remote_addr, resource_url):
-    """
-    Setup GConf ssh control path parameters
-    """
+    """Set the GConf ssh control path parameters."""
     rconf.ssh_ctl_dir = ctld
     content = "SECONDARY_HOST=%s\nSECONDARY_RESOURCE_URL=%s" % (remote_addr,
-                                                        resource_url)
+                                                                resource_url)
     encoded_content = content.encode()
     content_sha256 = sha256hex(encoded_content)
     """
@@ -194,7 +197,7 @@ def setup_ssh_ctl(ctld, remote_addr, resource_url):
 
 
 def grabfile(fname, content=None):
-    """open @fname + contest for its fcntl lock
+    """Open @fname + contest for its fcntl lock.
 
     @content: if given, set the file content to it
     """
@@ -223,7 +226,7 @@ def grabfile(fname, content=None):
 
 
 def grabpidfile(fname=None, setpid=True):
-    """.grabfile customization for pid files"""
+    """.grabfile customization for pid files."""
     if not fname:
         fname = gconf.get("pid-file")
     content = None
@@ -233,11 +236,10 @@ def grabpidfile(fname=None, setpid=True):
 
 
 def finalize(*args, **kwargs):
-    """all those messy final steps we go trough upon termination
+    """Do away with pidfile, ssh control dir and logging.
 
-    Do away with pidfile, ssh control dir and logging.
+    all those messy final steps we go trough upon termination
     """
-
     final_lock.acquire()
     if gconf.get('pid_file'):
         rm_pidf = rconf.pid_file_owned
@@ -296,13 +298,14 @@ def finalize(*args, **kwargs):
 
 
 def log_raise_exception(excont):
-    """top-level exception handler
+    """Log and raise exception.
+
+    top-level exception handler
 
     Try to some fancy things to cover up we face with an error.
     Translate some weird sounding but well understood exceptions
     into human-friendly lingo
     """
-
     is_filelog = False
     for h in logging.getLogger().handlers:
         fno = getattr(getattr(h, 'stream', None), 'fileno', None)
@@ -367,7 +370,6 @@ def log_raise_exception(excont):
 
 
 class FreeObject(object):
-
     """wildcard class for which any attribute can be set"""
 
     def __init__(self, **kw):
@@ -376,7 +378,6 @@ class FreeObject(object):
 
 
 class Thread(baseThread):
-
     """thread class flavor for gsyncd
 
     - always a daemon thread
@@ -406,9 +407,7 @@ class GsyncdError(Exception):
 
 
 class _MetaXattr(object):
-
-    """singleton class, a lazy wrapper around the
-    libcxattr module
+    """singleton class, a lazy wrapper around the libcxattr module.
 
     libcxattr (a heavy import due to ctypes) is
     loaded only when when the single
@@ -443,7 +442,8 @@ def privileged():
 
 
 def boolify(s):
-    """
+    """Convert string to boolean.
+
     Generic string to boolean converter
 
     return
@@ -471,10 +471,7 @@ def boolify(s):
 
 
 def eintr_wrap(func, exc, *args):
-    """
-    wrapper around syscalls resilient to interrupt caused
-    by signals
-    """
+    """Wrap around syscalls resilient to interrupt caused by signals."""
     while True:
         try:
             return func(*args)
@@ -563,8 +560,7 @@ def selfkill(sig=SIGTERM):
 
 
 def errno_wrap(call, arg=[], errnos=[], retry_errnos=[]):
-    """ wrapper around calls resilient to errnos.
-    """
+    """Wrap around calls resilient to errnos."""
     nr_tries = 0
     while True:
         try:
@@ -587,6 +583,7 @@ def errno_wrap(call, arg=[], errnos=[], retry_errnos=[]):
 
 def lstat(e):
     return errno_wrap(os.lstat, [e], [ENOENT], [ESTALE, EBUSY])
+
 
 def get_gfid_from_mnt(gfidpath):
     return errno_wrap(Xattr.lgetxattr,
@@ -628,16 +625,16 @@ def gf_event(event_type, **kwargs):
 
 
 class GlusterLogLevel(object):
-        NONE = 0
-        EMERG = 1
-        ALERT = 2
-        CRITICAL = 3
-        ERROR = 4
-        WARNING = 5
-        NOTICE = 6
-        INFO = 7
-        DEBUG = 8
-        TRACE = 9
+    NONE = 0
+    EMERG = 1
+    ALERT = 2
+    CRITICAL = 3
+    ERROR = 4
+    WARNING = 5
+    NOTICE = 6
+    INFO = 7
+    DEBUG = 8
+    TRACE = 9
 
 
 def get_changelog_log_level(lvl):
@@ -654,6 +651,7 @@ def get_primary_and_secondary_data_from_args(args):
             secondary_data = arg.replace("ssh://", "")
 
     return (primary_name, secondary_data)
+
 
 def unshare_propagation_supported():
     global unshare_mnt_propagation
@@ -721,7 +719,8 @@ def get_slv_dir_path(slv_host, slv_volume, gfid):
                 # .gfid/GFID
                 gfidpath = unescape_space_newline(os.path.join(pfx, gfid))
                 realpath = errno_wrap(Xattr.lgetxattr_buf,
-                      [gfidpath, 'glusterfs.gfid2path'], [ENOENT], [ESTALE])
+                                      [gfidpath, 'glusterfs.gfid2path'],
+                                      [ENOENT], [ESTALE])
                 if not isinstance(realpath, int):
                     basename = os.path.basename(realpath).rstrip('\x00')
                     dirpath = os.path.dirname(realpath)
@@ -739,9 +738,11 @@ def get_slv_dir_path(slv_host, slv_volume, gfid):
 
 
 def lf(event, **kwargs):
-    """
+    """Format event log entries.
+
     Log Format helper function, log messages can be
     easily modified to structured log format.
+
     lf("Config Change", sync_jobs=4, brick=/bricks/b1) will be
     converted as "Config Change [{brick=/bricks/b1}, {sync_jobs=4}]"
     """
@@ -752,13 +753,15 @@ def lf(event, **kwargs):
 
 
 class Popen(subprocess.Popen):
+    """class Popen.
 
-    """customized subclass of subprocess.Popen with a ring
-    buffer for children error output"""
+    A customized subclass of subprocess.Popen
+    with a ring buffer for children error output.
+    """
 
     @classmethod
     def init_errhandler(cls):
-        """start the thread which handles children's error output"""
+        """Start the thread which handles children's error output."""
         cls.errstore = {}
 
         def tailer():
@@ -808,14 +811,14 @@ class Popen(subprocess.Popen):
 
     @classmethod
     def fork(cls):
-        """fork wrapper that restarts errhandler thread in child"""
+        """Fork wrapper that restarts errhandler thread in child."""
         pid = os.fork()
         if not pid:
             cls.init_errhandler()
         return pid
 
     def __init__(self, args, *a, **kw):
-        """customizations for subprocess.Popen instantiation
+        """Customizations for subprocess.Popen instantiation.
 
         - 'close_fds' is taken to be the default
         - if child's stderr is chosen to be managed,
@@ -837,11 +840,11 @@ class Popen(subprocess.Popen):
                               (args[0], errno.errorcode[ex.errno],
                                os.strerror(ex.errno)))
         if kw.get('stderr') == subprocess.PIPE:
-            assert(getattr(self, 'errhandler', None))
+            assert (getattr(self, 'errhandler', None))
             self.errstore[self] = []
 
     def errlog(self):
-        """make a log about child's failure event"""
+        """Make a log about child's failure event."""
         logging.error(lf("command returned error",
                          cmd=" ".join(self.args),
                          error=self.returncode))
@@ -859,12 +862,14 @@ class Popen(subprocess.Popen):
             logerr(lp)
 
     def errfail(self):
-        """fail nicely if child did not terminate with success"""
+        """Fail nicely if child did not terminate with success."""
         self.errlog()
         finalize(exval=1)
 
     def terminate_geterr(self, fail_on_err=True):
-        """kill child, finalize stderr harvesting (unregister
+        """Terminate and get error.
+
+        kill child, finalize stderr harvesting (unregister
         from errhandler, set up .elines), fail on error if
         asked for
         """
@@ -895,9 +900,13 @@ class Popen(subprocess.Popen):
 
 
 def host_brick_split(value):
-    """
+    """Split host and brick.
+
     IPv6 compatible way to split and get the host
-    and brick information. Example inputs:
+    and brick information.
+
+    Example inputs:
+
     node1.example.com:/exports/bricks/brick1/brick
     fe80::af0f:df82:844f:ef66%utun0:/exports/bricks/brick1/brick
     """
@@ -908,7 +917,6 @@ def host_brick_split(value):
 
 
 class Volinfo(object):
-
     def __init__(self, vol, host='localhost', prelude=[], primary=True):
         if primary:
             gluster_cmd_dir = gconf.get("gluster-command-dir")
@@ -1106,7 +1114,7 @@ def can_ssh(host, port=22):
 
 
 def get_up_nodes(hosts, port):
-    # List of hosts with Hostname/IP and UUID
+    """List of hosts with Hostname/IP and UUID."""
     up_nodes = []
     for h in hosts:
         if can_ssh(h[0], port):
@@ -1116,7 +1124,8 @@ def get_up_nodes(hosts, port):
 
 
 def ssh_cipher_present(sshopts):
-    """
+    """Check ssh cipher.
+
     Returns True if user has defined a custom cipher to
     use for the SSH connection under rysnc-ssh-options.
     """
