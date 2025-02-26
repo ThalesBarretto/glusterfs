@@ -3,7 +3,7 @@
 # anomalies in quota accounting. Run this script with -h option
 # for further details.
 
-'''
+"""
    Copyright (c) 2018 Red Hat, Inc. <http://www.redhat.com>
    This file is part of GlusterFS.
 
@@ -11,12 +11,15 @@
    General Public License, version 3 or any later version (LGPLv3 or
    later), or the GNU General Public License, version 2 (GPLv2), in all
    cases as published by the Free Software Foundation.
-'''
+"""
 from __future__ import print_function
-import os, sys, re
-from stat import *
-import subprocess
+
 import argparse
+import os
+import re
+import subprocess
+import sys
+from stat import *
 import xattr
 
 aggr_size = {}
@@ -27,7 +30,7 @@ obj_fix_count = 0
 file_count = 0
 dir_count = 0
 
-#CONSTANTS
+# CONSTANTS
 KB = 1024
 MB = 1048576
 GB = 1048576 * 1024
@@ -37,20 +40,21 @@ QUOTA_VERBOSE = 0
 QUOTA_META_ABSENT = 1
 QUOTA_SIZE_MISMATCH = 2
 
-IS_DIRTY ='0x3100'
-IS_CLEAN ='0x3000'
+IS_DIRTY = '0x3100'
+IS_CLEAN = '0x3000'
 
 
-epilog_msg='''
+epilog_msg = """
             The script attempts to find any gluster accounting issues in the
             filesystem at the given subtree. The script crawls the given
             subdirectory tree doing a stat for all files and compares the
             size reported by gluster quota with the size reported by stat
             calls. Any mismatch is reported. In addition integrity of marker
             xattrs are verified.
-            '''
+            """
 
-def print_msg(log_type, path, xattr_dict = {}, stbuf = "", dir_size = None):
+
+def print_msg(log_type, path, xattr_dict={}, stbuf="", dir_size=None):
     if log_type == QUOTA_VERBOSE:
         print('%-24s %-60s\nxattr_values: %s\n%s\n' % ("Verbose", path, xattr_dict, stbuf))
     elif log_type == QUOTA_META_ABSENT:
@@ -59,26 +63,30 @@ def print_msg(log_type, path, xattr_dict = {}, stbuf = "", dir_size = None):
         print("mismatch")
         if dir_size is not None:
             print('%24s %60s %12s %12s' % ("Size Mismatch", path,
-                xattr_dict, dir_size))
+                  xattr_dict, dir_size))
         else:
             print('%-24s %-60s %-12s %-12s' % ("Size Mismatch", path, xattr_dict,
-                   stbuf.st_size))
+                  stbuf.st_size))
+
 
 def size_differs_lot(s1, s2):
-    '''
+    """Check size difference.
+
     There could be minor accounting differences between the stat based
     accounting and gluster accounting. To avoid these from throwing lot
     of false positives in our logs. using a threshold of 1M for now.
-    TODO: For a deeply nested directory, at higher levels in hierarchy
-    differences may not be significant, hence this check needs to be improved.
-    '''
+    """
+    # TODO: For a deeply nested directory, at higher levels in hierarchy
+    # differences may not be significant, hence this check needs to be
+    # improved.
     if abs(s1-s2) > 0:
         return True
     else:
         return False
 
+
 def fix_hardlink_accounting(curr_dict, accounted_dict, curr_size):
-    '''
+    """
             Hard links are messy.. we have to account them for their parent
             directory. But, stop accounting at the most common ancestor.
             Eg:
@@ -104,7 +112,7 @@ def fix_hardlink_accounting(curr_dict, accounted_dict, curr_size):
                                        hardlinks that has already been accounted
                                        in current subtree.
             Also delete the duplicate link from curr_dict.
-    '''
+    """
 
     dual_accounted_links = set(curr_dict.keys()) & set(accounted_dict.keys())
     for link in dual_accounted_links:
@@ -121,21 +129,22 @@ def fix_xattr(file_name, mark_dirty):
         return
     if mark_dirty:
         print("MARKING DIRTY: " + file_name)
-        out = subprocess.check_output (["/usr/bin/setfattr", "-n",
+        out = subprocess.check_output(["/usr/bin/setfattr", "-n",
                                        "trusted.glusterfs.quota.dirty",
                                        "-v", IS_DIRTY, file_name])
     rel_path = os.path.relpath(file_name, brick_path)
-    print("stat on "  + mnt_path + "/" + rel_path)
+    print("stat on " + mnt_path + "/" + rel_path)
     stbuf = os.lstat(mnt_path + "/" + rel_path)
 
     obj_fix_count += 1
 
+
 def get_quota_xattr_brick(dpath):
-    out = subprocess.check_output (["/usr/bin/getfattr", "--no-dereference",
-                                    "-d", "-m.", "-e", "hex", dpath])
+    out = subprocess.check_output(["/usr/bin/getfattr", "--no-dereference",
+                                   "-d", "-m.", "-e", "hex", dpath])
     pairs = out.splitlines()
 
-    '''
+    """
     Sample output to be parsed:
     [root@dhcp35-100 mnt]# getfattr -d -m. -e hex /export/b1/B0/d14/d13/
     # file: export/b1/B0/d14/d13/
@@ -146,12 +155,12 @@ def get_quota_xattr_brick(dpath):
     trusted.glusterfs.quota.6a7675a3-b85a-40c5-830b-de9229d702ce.contri.39=0x00000000000000000000000000000000000000000000000e
     trusted.glusterfs.quota.dirty=0x3000
     trusted.glusterfs.quota.size.39=0x00000000000000000000000000000000000000000000000e
-    '''
+    """
 
-    '''
+    """
     xattr_dict dictionary holds quota related xattrs
     eg:
-    '''
+    """
 
     xattr_dict = {}
     xattr_dict['parents'] = {}
@@ -174,8 +183,7 @@ def get_quota_xattr_brick(dpath):
                 xattr_dict['version'] = xattr_version
             else:
                 if xattr_version != xattr_dict['version']:
-                   print("Multiple xattr version found")
-
+                    print("Multiple xattr version found")
 
             cur_parent = xattr_key.split(".")[3]
             if cur_parent not in xattr_dict['parents']:
@@ -211,7 +219,8 @@ def get_quota_xattr_brick(dpath):
 
     return xattr_dict
 
-def verify_file_xattr(path, stbuf = None):
+
+def verify_file_xattr(path, stbuf=None):
 
     global file_count
     file_count += 1
@@ -265,11 +274,13 @@ def verify_dir_xattr(path, dir_size):
 
 
 def walktree(t_dir, hard_link_dict):
-    '''recursively descend the directory tree rooted at dir,
-       aggregating the size
-       t_dir            : directory to walk over.
-       hard_link_dict   : dict of inodes with multiple hard_links under t_dir
-    '''
+    """Walk the tree.
+
+    recursively descend the directory tree rooted at dir, aggregating the size
+
+    t_dir            : directory to walk over.
+    hard_link_dict   : dict of inodes with multiple hard_links under t_dir
+    """
     global aggr_size
     aggr_size[t_dir] = 0
 
@@ -296,16 +307,16 @@ def walktree(t_dir, hard_link_dict):
             file_size = stbuf.st_size
             if stbuf.st_nlink > 2:
                 # send a single element dict to check if file is accounted.
-                file_size = fix_hardlink_accounting({stbuf.st_ino:stbuf.st_size},
+                file_size = fix_hardlink_accounting({stbuf.st_ino: stbuf.st_size},
                                                     hard_link_dict,
                                                     stbuf.st_size)
 
                 if file_size == 0:
                     print_msg("HARD_LINK (skipped)", pathname, "",
-                                stbuf)
+                              stbuf)
                 else:
                     print_msg("HARD_LINK (accounted)", pathname, "",
-                               stbuf)
+                              stbuf)
                     hard_link_dict[stbuf.st_ino] = stbuf.st_size
 
             if t_dir in aggr_size:
@@ -325,7 +336,7 @@ def walktree(t_dir, hard_link_dict):
     # du also accounts for t_directory sizes
     # aggr_size[t_dir] += 4096
 
-    #cleanup
+    # cleanup
     ret = aggr_size[t_dir]
     del aggr_size[t_dir]
     return ret
@@ -337,27 +348,30 @@ if __name__ == '__main__':
     parser.add_argument('brick_path', nargs=1,
                         help='The brick path (or any descendent sub-directory of brick path)',
                         )
-    parser.add_argument('--full-logs', dest='verbose', action='store_true',
-                   help='''
-                         log all the xattr values and stat values reported
-                         for analysis. [CAUTION: This can give lot of output
-                         depending on FS depth. So one has to make sure enough
-                         disk space exists if redirecting to file]
-                        '''
+    parser.add_argument('--full-logs',
+                        dest='verbose', action='store_true',
+                        help="""
+                        log all the xattr values and stat values reported
+                        for analysis. [CAUTION: This can give lot of output
+                        depending on FS depth. So one has to make sure enough
+                        disk space exists if redirecting to file]
+                        """
                         )
-    parser.add_argument('--fix-issues', metavar='mount_path', dest='mnt', action='store',
-                   help='''
-                         fix accounting issues where the xattr values disagree
-                         with stat sizes reported by gluster. A mount is also
-                         required for this option to be used.
-                         [CAUTION: This will directly modify backend xattr]
-                        '''
+    parser.add_argument('--fix-issues',
+                        metavar='mount_path', dest='mnt', action='store',
+                        help="""
+                        fix accounting issues where the xattr values disagree
+                        with stat sizes reported by gluster. A mount is also
+                        required for this option to be used.
+                        [CAUTION: This will directly modify backend xattr]
+                        """
                         )
-    parser.add_argument('--sub-dir', metavar='sub_dir', dest='sub_dir', action='store',
-                   help='''
-                         limit the crawling and accounting verification/correction
-                         to a specific subdirectory.
-                        '''
+    parser.add_argument('--sub-dir',
+                        metavar='sub_dir', dest='sub_dir', action='store',
+                        help="""
+                        limit the crawling and accounting
+                        verification/correction to a specific subdirectory.
+                        """
                         )
 
     args = parser.parse_args()
