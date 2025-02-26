@@ -9,14 +9,16 @@
 #
 
 import os
+
 from ctypes import CDLL, get_errno
 from py2py3 import (bytearray_to_str, gr_create_string_buffer,
                     gr_query_xattr, gr_lsetxattr, gr_lremovexattr)
 
 
 class Xattr(object):
+    """class Xattr.
 
-    """singleton that wraps the extended attributes system
+    singleton that wraps the extended attributes system
        interface for python using ctypes
 
        Just implement it to the degree we need it, in particular
@@ -60,7 +62,7 @@ class Xattr(object):
 
     @classmethod
     def lgetxattr_buf(cls, path, attr):
-        """lgetxattr variant with size discovery"""
+        """Use lgetxattr variant with size discovery"""
         size = cls.lgetxattr(path, attr)
         if size == -1:
             cls.raise_oserr()
@@ -90,7 +92,7 @@ class Xattr(object):
 
     @classmethod
     def llistxattr_buf(cls, path):
-        """listxattr variant with size discovery"""
+        """Use listxattr variant with size discovery."""
         try:
             # Assuming no more than 100 xattrs in a file/directory and
             # each xattr key length will be less than 256 bytes
