@@ -13,12 +13,12 @@ try:
     from ConfigParser import RawConfigParser, NoSectionError
 except ImportError:
     from configparser import RawConfigParser, NoSectionError
+
 import os
 import shutil
-from string import Template
 from datetime import datetime
+from string import Template
 from threading import Lock
-
 
 # Global object which can be used in other modules
 # once load_config is called
@@ -164,7 +164,6 @@ class Gconf(object):
 
         if value is not None and not self._is_valid_value(name, value):
             raise GconfInvalidValue()
-
 
     def _load_with_lock(self):
         with self.lock:
@@ -337,12 +336,13 @@ class Gconf(object):
     def _is_config_changed(self):
         if self.custom_conf_file is not None and \
            os.path.exists(self.custom_conf_file):
-                st = os.lstat(self.custom_conf_file)
-                if st.st_mtime > self.prev_mtime:
-                    self.prev_mtime = st.st_mtime
-                    return True
+            st = os.lstat(self.custom_conf_file)
+            if st.st_mtime > self.prev_mtime:
+                self.prev_mtime = st.st_mtime
+                return True
 
         return False
+
 
 def is_config_file_old(config_file, primaryvol, secondaryvol):
     cnf = RawConfigParser()
@@ -353,18 +353,19 @@ def is_config_file_old(config_file, primaryvol, secondaryvol):
     except NoSectionError:
         return None
 
+
 def config_upgrade(config_file, ret):
     config_file_backup = os.path.join(os.path.dirname(config_file), "gsyncd.conf.bkp")
 
-    #copy old config file in a backup file
+    # copy old config file in a backup file
     shutil.copyfile(config_file, config_file_backup)
 
-    #write a new config file
+    # write a new config file
     config = RawConfigParser()
     config.add_section('vars')
 
     for key, value in ret.items():
-        #handle option name changes
+        # handle option name changes
         if key == "use_tarssh":
             new_key = "sync-method"
             if value == "true":
@@ -375,7 +376,7 @@ def config_upgrade(config_file, ret):
         elif key == "timeout":
             new_key = "secondary-timeout"
             config.set('vars', new_key, value)
-        #for changes like: ignore_deletes to ignore-deletes
+        # for changes like: ignore_deletes to ignore-deletes
         else:
             new_key = key.replace("_", "-")
             config.set('vars', new_key, value)
