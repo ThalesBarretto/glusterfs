@@ -217,7 +217,7 @@ def main():
     # If an subcmd accepts config file then it also accepts
     # primary and Secondary arguments.
     if config_file is None and hasattr(args, "config_file") \
-        and args.subcmd != "secondary":
+       and args.subcmd != "secondary":
         config_file = "%s/geo-replication/%s_%s_%s/gsyncd.conf" % (
             GLUSTERD_WORKDIR,
             args.primary,
@@ -245,7 +245,7 @@ def main():
        args.subcmd in ["monitor", "config-get", "config-set", "config-reset"]:
         ret = gconf.is_config_file_old(config_file, args.primary, extra_tmpl_args["secondaryvol"])
         if ret is not None:
-           gconf.config_upgrade(config_file, ret)
+            gconf.config_upgrade(config_file, ret)
 
     # Load Config file
     gconf.load(GLUSTERFS_CONFDIR + "/gsyncd.conf",
