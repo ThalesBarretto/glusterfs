@@ -1,14 +1,17 @@
+"""Test utils create-files."""
 
 # This script was developed by Vijaykumar Koppad (vkoppad@redhat.com)
 # The latest version of this script can found at
 # http://github.com/vijaykumar-koppad/crefi
 
 from __future__ import with_statement
+
 import os
 import re
 import sys
 import time
 import errno
+
 import xattr
 import string
 import random
@@ -19,13 +22,17 @@ import argparse
 datsiz = 0
 timr = 0
 
+
 def get_ascii_upper_alpha_digits():
-    if sys.version_info > (3,0):
+    """Get alphanumeric characters [a-Z0-9]."""
+    if sys.version_info > (3, 0):
         return string.ascii_uppercase+string.digits
     else:
         return string.uppercase+string.digits
 
+
 def setLogger(filename):
+    """Enable global logger."""
     global logger
     logger = logging.getLogger(filename)
     logger.setLevel(logging.DEBUG)
@@ -33,6 +40,7 @@ def setLogger(filename):
 
 
 def setupLogger(filename):
+    """Configure logger."""
     logger = logging.getLogger(filename)
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(message)s')
@@ -44,6 +52,7 @@ def setupLogger(filename):
 
 
 def os_rd(src, size):
+    """Read up to size from src."""
     global datsiz
     fd = os.open(src, os.O_RDONLY)
     data = os.read(fd, size)
@@ -53,6 +62,7 @@ def os_rd(src, size):
 
 
 def os_wr(dest, data):
+    """Write data to dest."""
     global timr
     st = time.time()
     fd = os.open(dest, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
@@ -64,6 +74,7 @@ def os_wr(dest, data):
 
 
 def create_sparse_file(fil, size, mins, maxs, rand):
+    """Create sparse zero-filled file."""
     if rand:
         size = random.randint(mins, maxs)
     else:
@@ -74,6 +85,7 @@ def create_sparse_file(fil, size, mins, maxs, rand):
 
 
 def create_binary_file(fil, size, mins, maxs, rand):
+    """Create binary random-filled file."""
     if rand:
         size = random.randint(mins, maxs)
     else:
@@ -84,6 +96,7 @@ def create_binary_file(fil, size, mins, maxs, rand):
 
 
 def create_txt_file(fil, size, mins, maxs, rand):
+    """Create text (txt) file."""
     if rand:
         size = random.randint(mins, maxs)
     if size < 500*1024:
@@ -101,6 +114,7 @@ def create_txt_file(fil, size, mins, maxs, rand):
 
 
 def create_tar_file(fil, size, mins, maxs, rand):
+    """Create tar file."""
     if rand:
         size = random.randint(mins, maxs)
     else:
@@ -115,6 +129,7 @@ def create_tar_file(fil, size, mins, maxs, rand):
 
 
 def get_filename(flen):
+    """Get a file name."""
     size = flen
     char = get_ascii_upper_alpha_digits()
     st = ''.join(random.choice(char) for i in range(size))
@@ -124,6 +139,7 @@ def get_filename(flen):
 
 def text_files(files, file_count, inter, size, mins, maxs, rand,
                flen, randname, dir_path):
+    """Count text files."""
     global datsiz, timr
     for k in range(files):
         if not file_count % inter:
@@ -139,6 +155,7 @@ def text_files(files, file_count, inter, size, mins, maxs, rand,
 
 def sparse_files(files, file_count, inter, size, mins, maxs,
                  rand, flen, randname, dir_path):
+    """Count sparse files."""
     for k in range(files):
         if not file_count % inter:
             logger.info("Total files created -- "+str(file_count))
@@ -153,6 +170,7 @@ def sparse_files(files, file_count, inter, size, mins, maxs,
 
 def binary_files(files, file_count, inter, size, mins, maxs,
                  rand, flen, randname, dir_path):
+    """Count binary files."""
     for k in range(files):
         if not file_count % inter:
             logger.info("Total files created -- "+str(file_count))
@@ -167,6 +185,7 @@ def binary_files(files, file_count, inter, size, mins, maxs,
 
 def tar_files(files, file_count, inter, size, mins, maxs,
               rand, flen, randname, dir_path):
+    """Count tar files."""
     for k in range(files):
         if not file_count % inter:
             logger.info("Total files created -- "+str(file_count))
@@ -180,6 +199,7 @@ def tar_files(files, file_count, inter, size, mins, maxs,
 
 
 def setxattr_files(files, randname, dir_path):
+    """Set or get extended attributes (xattr) in files."""
     char = get_ascii_upper_alpha_digits()
     if not randname:
         for k in range(files):
@@ -196,6 +216,7 @@ def setxattr_files(files, randname, dir_path):
 
 
 def rename_files(files, flen, randname, dir_path):
+    """Rename files."""
     if not randname:
         for k in range(files):
             os.rename(dir_path + "/" + "file" + str(k),
@@ -211,6 +232,7 @@ def rename_files(files, flen, randname, dir_path):
 
 
 def truncate_files(files, mins, maxs, randname, dir_path):
+    """Truncate files."""
     if not randname:
         for k in range(files):
             byts = random.randint(mins, maxs)
@@ -229,6 +251,7 @@ def truncate_files(files, mins, maxs, randname, dir_path):
 
 
 def chmod_files(files, flen, randname, dir_path):
+    """Change permission mode bits on files."""
     if not randname:
         for k in range(files):
             mod = random.randint(0, 511)
@@ -240,12 +263,16 @@ def chmod_files(files, flen, randname, dir_path):
             os.chmod(dir_path+"/"+fil, mod)
     return
 
+
 def random_og(path):
+    """Set random ownwer on file."""
     u = random.randint(1025, 65536)
     g = -1
     os.chown(path, u, g)
 
+
 def chown_files(files, flen, randname, dir_path):
+    """Change owner of files."""
     if not randname:
         for k in range(files):
             random_og(dir_path+"/"+"file"+str(k))
@@ -257,6 +284,7 @@ def chown_files(files, flen, randname, dir_path):
 
 
 def chgrp_files(files, flen, randname, dir_path):
+    """Change group owner of files."""
     if not randname:
         for k in range(files):
             random_og(dir_path+"/"+"file"+str(k))
@@ -268,6 +296,7 @@ def chgrp_files(files, flen, randname, dir_path):
 
 
 def symlink_files(files, flen, randname, dir_path):
+    """Create symlinks."""
     try:
         os.makedirs(dir_path+"/"+"symlink_to_files")
     except OSError as ex:
@@ -288,6 +317,7 @@ def symlink_files(files, flen, randname, dir_path):
 
 
 def hardlink_files(files, flen, randname, dir_path):
+    """Create hardlinks."""
     try:
         os.makedirs(dir_path+"/"+"hardlink_to_files")
     except OSError as ex:
@@ -309,6 +339,7 @@ def hardlink_files(files, flen, randname, dir_path):
 
 
 def human2bytes(size):
+    """Convert human-readable size to bytes."""
     size_short = {
         1024: ['K', 'KB', 'KiB', 'k', 'kB', 'kiB'],
         1024*1024: ['M', 'MB', 'MiB'],
@@ -326,6 +357,7 @@ def human2bytes(size):
 
 
 def bytes2human(byts):
+    """Convert bytes to human-readable size."""
     abbr = {
         1 << 30: "GB",
         1 << 20: "MB",
@@ -343,6 +375,7 @@ def bytes2human(byts):
 def multipledir(mnt_pnt, brdth, depth, files, fop, file_type="text",
                 inter="1000", size="100K", mins="10K", maxs="500K",
                 rand=False, l=10, randname=False):
+    """Test multiple directories."""
     files_count = 1
     size = human2bytes(size)
     maxs = human2bytes(maxs)
@@ -458,7 +491,7 @@ def multipledir(mnt_pnt, brdth, depth, files, fop, file_type="text",
 
 def singledir(mnt_pnt, files, fop, file_type="text", inter="1000", size="100K",
               mins="10K", maxs="500K", rand=False, l=10, randname=False):
-
+    """Test a single directory."""
     files_count = 1
     size = human2bytes(size)
     maxs = human2bytes(maxs)
