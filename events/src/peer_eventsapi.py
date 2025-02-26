@@ -11,24 +11,22 @@
 #
 
 from __future__ import print_function
-import os
-import json
-from errno import EEXIST
+
 import fcntl
-from errno import EACCES, EAGAIN
+import json
+import os
 import signal
 import sys
 import time
+from errno import EACCES, EAGAIN, EEXIST
 
 import requests
 from prettytable import PrettyTable
-
 from gluster.cliutils import (Cmd, node_output_ok, node_output_notok,
                               sync_file_to_peers, GlusterCmdException,
                               output_error, execute_in_peers, runcli,
                               set_common_args_func)
 from gfevents.utils import LockedOpen, get_jwt_token, save_https_cert, NamedTempOpen
-
 from gfevents.eventsapiconf import (WEBHOOKS_FILE_TO_SYNC,
                                     WEBHOOKS_FILE,
                                     DEFAULT_CONFIG_FILE,
@@ -53,7 +51,7 @@ from gfevents.eventsapiconf import (WEBHOOKS_FILE_TO_SYNC,
 
 def handle_output_error(err, errcode=1, json_output=False):
     if json_output:
-        print (json.dumps({
+        print(json.dumps({
             "output": "",
             "error": err
             }))
@@ -92,7 +90,7 @@ def create_webhooks_file_if_not_exists(args):
 
     if not os.path.exists(WEBHOOKS_FILE):
         with NamedTempOpen(WEBHOOKS_FILE, "w") as f:
-           f.write(json.dumps({}))
+            f.write(json.dumps({}))
 
 
 def boolify(value):
@@ -103,9 +101,9 @@ def boolify(value):
 
 
 def mkdirp(path, exit_on_err=False, logger=None):
-    """
-    Try creating required directory structure
-    ignore EEXIST and raise exception for rest of the errors.
+    """Try creating required directory structure.
+
+    Ignore EEXIST and raise exception for rest of the errors.
     Print error in stderr and exit
     """
     try:
@@ -210,12 +208,12 @@ def sync_to_peers(args):
         ret = ERROR_PARTIAL_SUCCESS
 
     if args.json:
-        print (json.dumps({
+        print(json.dumps({
             "output": json_out,
             "error": ""
         }))
     else:
-        print (table)
+        print(table)
 
     # If sync status is not ok for any node set error code as partial success
     sys.exit(ret)
@@ -262,12 +260,12 @@ class ReloadCmd(Cmd):
     def run(self, args):
         out = action_handle("reload", args.json)
         if args.json:
-            print (json.dumps({
+            print(json.dumps({
                 "output": out,
                 "error": ""
             }))
         else:
-            print (out)
+            print(out)
 
 
 class NodeStatus(Cmd):
@@ -289,21 +287,21 @@ class StatusCmd(Cmd):
         if args.json:
             json_out["webhooks"] = webhooks.keys()
         else:
-            print ("Webhooks: " + ("" if webhooks else "None"))
+            print("Webhooks: " + ("" if webhooks else "None"))
             for w in webhooks:
-                print (w)
+                print(w)
 
-            print ()
+            print()
 
         out = action_handle("status", args.json)
         if args.json:
             json_out["data"] = out
-            print (json.dumps({
+            print(json.dumps({
                 "output": json_out,
                 "error": ""
             }))
         else:
-            print (out)
+            print(out)
 
 
 class WebhookAddCmd(Cmd):
@@ -496,12 +494,12 @@ class WebhookTestCmd(Cmd):
             ret = ERROR_PARTIAL_SUCCESS
 
         if args.json:
-            print (json.dumps({
+            print(json.dumps({
                 "output": json_out,
                 "error": ""
             }))
         else:
-            print (table)
+            print(table)
 
         sys.exit(ret)
 
@@ -529,7 +527,7 @@ class ConfigGetCmd(Cmd):
             else:
                 json_out[args.name] = data[args.name]
 
-            print (json.dumps({
+            print(json.dumps({
                 "output": json_out,
                 "error": ""
             }))
@@ -541,7 +539,7 @@ class ConfigGetCmd(Cmd):
             else:
                 table.add_row([args.name, data[args.name]])
 
-            print (table)
+            print(table)
 
 
 def read_file_content_json(fname):
@@ -600,7 +598,7 @@ class ConfigSetCmd(Cmd):
                 restart = True
 
             if restart:
-                print ("\nRestart glustereventsd in all nodes")
+                print("\nRestart glustereventsd in all nodes")
 
             sync_to_peers(args)
 
@@ -648,7 +646,7 @@ class ConfigResetCmd(Cmd):
                     break
 
             if restart:
-                print ("\nRestart glustereventsd in all nodes")
+                print("\nRestart glustereventsd in all nodes")
 
             sync_to_peers(args)
 
