@@ -1,5 +1,6 @@
-
+"""Test utils pidof."""
 from __future__ import print_function
+
 import sys
 
 try:
@@ -8,14 +9,18 @@ except ImportError:
     print("Please install psutil --> pip install psutil")
     sys.exit(1)
 
+
 def pmap_find(p, name):
+    """Find process memory maps."""
     for m in p.memory_maps(grouped=True):
         if m.path.endswith("%s.so" % name):
             return True
         continue
     return False
 
+
 def pidof(processname):
+    """Find pid of gluster processes."""
     for p in psutil.process_iter():
         if p.pid == 0:
             continue
@@ -30,7 +35,9 @@ def pidof(processname):
         if processname.strip() == p.name():
             print((p.pid))
 
+
 def main(argv):
+    """Run program."""
     if len(argv) < 2:
         sys.stderr.write("Usage: %s <processname>\n" % (argv[0],))
         return 1
@@ -38,8 +45,9 @@ def main(argv):
         pidof(argv[1])
     except Exception as err:
         print(err)
-        sys.stderr.write("Please be root - %s\n" % err);
+        sys.stderr.write("Please be root - %s\n" % err)
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main(sys.argv)
