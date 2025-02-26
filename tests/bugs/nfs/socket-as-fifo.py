@@ -1,3 +1,4 @@
+"""Tests for bugs nfs socket-as-fifo."""
 #
 # Create a unix domain socket and test if it is a socket (and not a fifo/pipe).
 #
@@ -5,16 +6,17 @@
 #
 
 from __future__ import print_function
+
 import os
+import socket
 import stat
 import sys
-import socket
 
 ret = 1
 
 if len(sys.argv) != 2:
-        print('Usage: %s <socket>' % (sys.argv[0]))
-        sys.exit(ret)
+    print('Usage: %s <socket>' % (sys.argv[0]))
+    sys.exit(ret)
 
 path = sys.argv[1]
 
@@ -25,7 +27,7 @@ stbuf = os.stat(path)
 mode = stbuf.st_mode
 
 if stat.S_ISSOCK(mode):
-        ret = 0
+    ret = 0
 
 sock.close()
 os.unlink(path)
