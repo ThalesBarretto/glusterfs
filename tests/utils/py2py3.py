@@ -1,3 +1,4 @@
+"""Test utils py2py3."""
 #
 # Copyright (c) 2018 Red Hat, Inc. <http://www.redhat.com>
 # This file is part of GlusterFS.
@@ -16,8 +17,10 @@ import stat
 import struct
 from ctypes import create_string_buffer
 
+
 def umask():
     return os.umask(0)
+
 
 if sys.version_info >= (3,):
     def pipe():
