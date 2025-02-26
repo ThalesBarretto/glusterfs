@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+"""Events glustereventsd."""
 #
 #  Copyright (c) 2016 Red Hat, Inc. <http://www.redhat.com>
 #  This file is part of GlusterFS.
@@ -11,30 +12,36 @@
 #
 
 from __future__ import print_function
-import sys
+
 import signal
+import sys
 import threading
+
 try:
     import socketserver
 except ImportError:
     import SocketServer as socketserver
+
 import socket
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
-
 from eventtypes import all_events
+
 import handlers
 import utils
 from eventsapiconf import SERVER_ADDRESSv4, SERVER_ADDRESSv6, PID_FILE
 from eventsapiconf import AUTO_BOOL_ATTRIBUTES, AUTO_INT_ATTRIBUTES
 from utils import logger, PidFile, PidFileLockFailed, boolify
 
+
 # Subclass so that specifically IPv4 packets are captured
 class UDPServerv4(socketserver.ThreadingUDPServer):
     address_family = socket.AF_INET
 
+
 # Subclass so that specifically IPv6 packets are captured
 class UDPServerv6(socketserver.ThreadingUDPServer):
     address_family = socket.AF_INET6
+
 
 class GlusterEventsRequestHandler(socketserver.BaseRequestHandler):
 
@@ -114,24 +121,24 @@ def init_event_server():
     # Creating the Eventing Server, UDP Server for IPv4 packets
     try:
         serverv4 = UDPServerv4((SERVER_ADDRESSv4, port),
-                   GlusterEventsRequestHandler)
+                               GlusterEventsRequestHandler)
     except socket.error as e:
         sys.stderr.write("Failed to start Eventsd for IPv4: {0}\n".format(e))
         serverv4 = None
     if serverv4:
         server_thread1 = threading.Thread(target=UDP_server_thread,
-                         args=(serverv4,))
+                                          args=(serverv4,))
         server_thread1.start()
     # Creating the Eventing Server, UDP Server for IPv6 packets
     try:
         serverv6 = UDPServerv6((SERVER_ADDRESSv6, port),
-                   GlusterEventsRequestHandler)
+                               GlusterEventsRequestHandler)
     except socket.error as e:
         sys.stderr.write("Failed to start Eventsd for IPv6: {0}\n".format(e))
         serverv6 = None
     if serverv6:
         server_thread2 = threading.Thread(target=UDP_server_thread,
-                         args=(serverv6,))
+                                          args=(serverv6,))
         server_thread2.start()
     if serverv4 is None and serverv6 is None:
         sys.stderr.write("Failed to start Eventsd: {0}\n".format(e))
