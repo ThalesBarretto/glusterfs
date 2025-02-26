@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""
+"""Tests utils changelogparser.
+
 Why?
 
 Converts this
@@ -43,6 +44,8 @@ GF_FOP = [
 
 
 class NumTokens_V11(object):
+    """Number tokes for v11."""
+
     E = 7
     M = 3
     D = 2
@@ -63,17 +66,24 @@ class NumTokens_V11(object):
 
 
 class NumTokens_V12(NumTokens_V11):
+    """Number tokes for v12."""
+
     UNLINK = 5
     RMDIR = 5
 
 
 class Version:
+    """Versio type."""
+
     V11 = "v1.1"
     V12 = "v1.2"
 
 
 class Record(object):
+    """A record in the changelog."""
+
     def __init__(self, **kwargs):
+        """Initialize a Record object."""
         self.ts = kwargs.get("ts", None)
         self.fop_type = kwargs.get("fop_type", None)
         self.gfid = kwargs.get("gfid", None)
@@ -159,7 +169,7 @@ def process_record(data, tokens, changelog_ts, callback):
     if not changelog_ts:
         ts1 = int(changelog_ts)
     else:
-        ts1=""
+        ts1 = ""
     record = Record(ts=ts1, fop_type=data[tokens[0]],
                     gfid=data[tokens[1]])
     if data[tokens[0]] == META:
@@ -232,5 +242,6 @@ def parse(filename, callback=default_callback):
             tokens.append(slice(slice_start, len(data)))
             process_record(data, tokens, changelog_ts, callback)
             tokens = []
+
 
 parse(sys.argv[1])
