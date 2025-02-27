@@ -54,9 +54,8 @@ slv_host = None
 
 
 class Server(object):
-
-    """singleton implemening those filesystem access primitives
-       which are needed for geo-replication functionality
+    """Singleton implemening those filesystem access primitives
+       which are needed for geo-replication functionality.
 
     (Singleton in the sense it's a class which has only static
     and classmethods and is used directly, without instantiation.)
@@ -87,12 +86,13 @@ class Server(object):
         return "!II%dsI%ds%ds" % (GX_GFID_CANONICAL_LEN, l1 + 1, l2 + 1)
 
     def _pathguard(f):
-        """decorator method that checks
+        """Guard against unsafe path.
+
+        decorator method that checks
         the path argument of the decorated
         functions to make sure it does not
         point out of the managed tree
         """
-
         fc = funcode(f)
         pi = list(fc.co_varnames).index('path')
 
@@ -109,7 +109,7 @@ class Server(object):
     @classmethod
     @_pathguard
     def entries(cls, path):
-        """directory entries in an array"""
+        """Directory entries in an array."""
         # prevent symlinks being followed
         if not stat.S_ISDIR(os.lstat(path).st_mode):
             raise OSError(ENOTDIR, os.strerror(ENOTDIR))
@@ -157,7 +157,7 @@ class Server(object):
     @classmethod
     @_pathguard
     def purge(cls, path, entries=None):
-        """force-delete subtrees
+        """Force-delete subtrees.
 
         If @entries is not specified, delete
         the whole subtree under @path (including
@@ -206,7 +206,7 @@ class Server(object):
     @classmethod
     @_pathguard
     def _create(cls, path, ctor):
-        """path creation backend routine"""
+        """Path creation backend routine."""
         try:
             ctor(path)
         except OSError:
@@ -229,7 +229,7 @@ class Server(object):
     @classmethod
     @_pathguard
     def xtime(cls, path, uuid):
-        """query xtime extended attribute
+        """Query xtime extended attribute.
 
         Return xtime of @path for @uuid as a pair of integers.
         "Normal" errors due to non-existent @path or extended attribute
@@ -252,7 +252,7 @@ class Server(object):
     @classmethod
     @_pathguard
     def stime_mnt(cls, path, uuid):
-        """query xtime extended attribute
+        """Query xtime extended attribute.
 
         Return xtime of @path for @uuid as a pair of integers.
         "Normal" errors due to non-existent @path or extended attribute
@@ -275,7 +275,7 @@ class Server(object):
     @classmethod
     @_pathguard
     def stime(cls, path, uuid):
-        """query xtime extended attribute
+        """Query xtime extended attribute.
 
         Return xtime of @path for @uuid as a pair of integers.
         "Normal" errors due to non-existent @path or extended attribute
@@ -331,7 +331,7 @@ class Server(object):
     @classmethod
     @_pathguard
     def set_stime(cls, path, uuid, mark):
-        """set @mark as stime for @uuid on @path"""
+        """Set @mark as stime for @uuid on @path."""
         errno_wrap(Xattr.lsetxattr,
                    [path,
                     '.'.join([cls.GX_NSPACE, uuid, 'stime']),
@@ -342,7 +342,7 @@ class Server(object):
     @classmethod
     @_pathguard
     def set_entry_stime(cls, path, uuid, mark):
-        """set @mark as stime for @uuid on @path"""
+        """Set @mark as stime for @uuid on @path."""
         errno_wrap(Xattr.lsetxattr,
                    [path,
                     '.'.join([cls.GX_NSPACE, uuid, 'entry_stime']),
@@ -353,7 +353,7 @@ class Server(object):
     @classmethod
     @_pathguard
     def set_xtime(cls, path, uuid, mark):
-        """set @mark as xtime for @uuid on @path"""
+        """Set @mark as xtime for @uuid on @path."""
         errno_wrap(Xattr.lsetxattr,
                    [path,
                     '.'.join([cls.GX_NSPACE, uuid, 'xtime']),
@@ -364,8 +364,8 @@ class Server(object):
     @classmethod
     @_pathguard
     def set_xtime_remote(cls, path, uuid, mark):
-        """
-        set @mark as xtime for @uuid on @path
+        """Set @mark as xtime for @uuid on @path.
+
         the difference b/w this and set_xtime() being
         set_xtime() being overloaded to set the xtime
         on the brick (this method sets xtime on the
@@ -459,7 +459,9 @@ class Server(object):
         failures = []
 
         def recursive_rmdir(gfid, entry, path):
-            """disk_gfid check added for original path for which
+            """Delete directories recursively.
+
+            disk_gfid check added for original path for which
             recursive_delete is called. This disk gfid check executed
             before every Unlink/Rmdir. If disk gfid is not matching
             with GFID from Changelog, that means other worker
@@ -657,8 +659,10 @@ class Server(object):
                                 blob = entry_pack_reg_stat(cls, gfid, bname,
                                                            e['stat'])
                             else:
-                                cmd_ret = errno_wrap(os.link, [slink, en],
-                                                    [ENOENT, EEXIST], [ESTALE])
+                                cmd_ret = errno_wrap(os.link,
+                                                     [slink, en],
+                                                     [ENOENT, EEXIST],
+                                                     [ESTALE])
                                 collect_failure(e, cmd_ret, uid, gid)
                 else:
                     st = lstat(entry)
@@ -767,7 +771,7 @@ class Server(object):
     @classmethod
     @_pathguard
     def setattr(cls, path, adct):
-        """set file attributes
+        """Set file attributes.
 
         @adct is a dict, where 'own', 'mode' and 'times'
         keys are looked for and values used to perform
@@ -791,7 +795,7 @@ class Server(object):
 
     @classmethod
     def keep_alive(cls, dct):
-        """process keepalive messages.
+        """Process keepalive messages.
 
         Return keep-alive counter (number of received keep-alive
         messages).
@@ -814,12 +818,11 @@ class Server(object):
 
     @staticmethod
     def version():
-        """version used in handshake"""
+        """Version used in handshake."""
         return 1.0
 
 
 class Mounter(object):
-
     """Abstract base class for mounter backends"""
 
     def __init__(self, params):
@@ -855,7 +858,7 @@ class Mounter(object):
         po.wait()
 
     def inhibit(self, label):
-        """inhibit a gluster filesystem
+        """Inhibit a gluster filesystem.
 
         Mount glusterfs over a temporary mountpoint,
         change into the mount, and lazy unmount the
@@ -923,11 +926,11 @@ class Mounter(object):
                     mounted = False
                     if mntdata[-1] == 'M':
                         mntdata = mntdata[:-1]
-                        assert(mntdata)
+                        assert (mntdata)
                         mounted = True
-                    assert(mntdata[-1] == '\0')
+                    assert (mntdata[-1] == '\0')
                     mntpt = mntdata[:-1]
-                    assert(mntpt)
+                    assert (mntpt)
 
                     umount_primary = False
                     umount_secondary = False
@@ -953,7 +956,7 @@ class Mounter(object):
                 rv = 200
             os._exit(rv)
 
-        #Polling the dht.subvol.status value.
+        # Polling the dht.subvol.status value.
         RETRIES = 10
         while not gf_mount_ready():
             if RETRIES < 0:
@@ -966,8 +969,7 @@ class Mounter(object):
 
 
 class DirectMounter(Mounter):
-
-    """mounter backend which calls mount(8), umount(8) directly"""
+    """Mounter backend which calls mount(8), umount(8) directly."""
 
     mountkw = {'stderr': subprocess.PIPE, 'universal_newlines': True}
     glusterprog = 'glusterfs'
@@ -989,8 +991,7 @@ class DirectMounter(Mounter):
 
 
 class MountbrokerMounter(Mounter):
-
-    """mounter backend using the mountbroker gluster service"""
+    """Mounter backend using the mountbroker gluster service."""
 
     mountkw = {'stderr': subprocess.PIPE, 'stdout': subprocess.PIPE,
                'universal_newlines': True}
@@ -1026,12 +1027,11 @@ class MountbrokerMounter(Mounter):
 
 
 class GLUSTERServer(Server):
-
-    "server enhancements for a glusterfs backend"""
+    """Server enhancements for a glusterfs backend."""
 
     @classmethod
     def _attr_unpack_dict(cls, xattr, extra_fields=''):
-        """generic volume mark fetching/parsing backed"""
+        """Generic volume mark fetching/parsing backend."""
         fmt_string = cls.NTV_FMTSTR + extra_fields
         buf = Xattr.lgetxattr('.', xattr, struct.calcsize(fmt_string))
         buf = str_to_bytearray(buf)
@@ -1052,7 +1052,7 @@ class GLUSTERServer(Server):
 
     @classmethod
     def foreign_volume_infos(cls):
-        """return list of valid (not expired) foreign volume marks"""
+        """Return list of valid (not expired) foreign volume marks."""
         dict_list = []
         xattr_list = Xattr.llistxattr_buf('.')
         for ele in xattr_list:
@@ -1074,7 +1074,7 @@ class GLUSTERServer(Server):
 
     @classmethod
     def native_volume_info(cls):
-        """get the native volume mark of the underlying gluster volume"""
+        """Get the native volume mark of the underlying gluster volume."""
         try:
             return cls._attr_unpack_dict('.'.join([cls.GX_NSPACE,
                                                    'volume-mark']))
@@ -1085,8 +1085,7 @@ class GLUSTERServer(Server):
 
 
 class GLUSTER(object):
-
-    """scheme class for gluster:// urls
+    """Scheme class for gluster:// urls.
 
     can be used to represent a gluster secondary server
     on secondary side, or interface to a remote gluster
@@ -1094,6 +1093,7 @@ class GLUSTER(object):
     (secondary-ish features come from the mixins, primary
     functionality is outsourced to GPrimary from primary)
     """
+
     server = GLUSTERServer
 
     def __init__(self, host, volume):
@@ -1107,13 +1107,12 @@ class GLUSTER(object):
         slv_host = self.host
 
     def connect(self):
-        """inhibit the resource beyond
+        """Inhibit the resource beyond.
 
         Choose mounting backend (direct or mountbroker),
         set up glusterfs parameters and perform the mount
         with given backend
         """
-
         logging.info("Mounting gluster volume locally...")
         t0 = time.time()
         label = gconf.get('mountbroker', None)
@@ -1140,14 +1139,13 @@ class GLUSTER(object):
                         duration="%.4f" % (time.time() - t0)))
 
     def gprimary_instantiate_tuple(self, secondary):
-        """return a tuple of the 'one shot' and the 'main crawl'
-        class instance"""
+        """Return a tuple of the 'one shot' and the 'main crawl' class instance."""
         return (gprimary_builder('xsync')(self, secondary),
                 gprimary_builder()(self, secondary),
                 gprimary_builder('changeloghistory')(self, secondary))
 
     def service_loop(self, secondary=None):
-        """enter service loop
+        """Enter service loop.
 
         - if secondary given, instantiate GPrimary and
           pass control to that instance, which implements
@@ -1197,12 +1195,12 @@ class GLUSTER(object):
 
             @classmethod
             def lstat(cls, e):
-                """ path based backend stat """
+                """Path based backend stat."""
                 return super(brickserver, cls).lstat(e)
 
             @classmethod
             def gfid(cls, e):
-                """ path based backend gfid fetch """
+                """Path based backend gfid fetch."""
                 return super(brickserver, cls).gfid(e)
 
             @classmethod
@@ -1321,8 +1319,7 @@ class GLUSTER(object):
 
 
 class SSH(object):
-
-    """scheme class for ssh:// urls
+    """Scheme class for ssh:// urls.
 
     interface to remote secondary on primary side
     implementing an ssh based proxy
@@ -1343,7 +1340,7 @@ class SSH(object):
         return {'user': u, 'host': h}
 
     def start_fd_client(self, i, o):
-        """set up RePCe client, handshake with server
+        """Set up RePCe client, handshake with server.
 
         It's cut out as a separate method to let
         subclasses hook into client startup
@@ -1364,7 +1361,7 @@ class SSH(object):
         self.secondaryurl = ':'.join([self.remote_addr, secondarypath])
 
     def connect_remote(self):
-        """connect to inner secondary url through outer ssh url
+        """Connect to inner secondary url through outer ssh url.
 
         Wrap the connecting utility in ssh.
 
@@ -1437,7 +1434,7 @@ class SSH(object):
                         duration="%.4f" % (time.time() - t0)))
 
     def rsync(self, files, *args, **kw):
-        """invoke rsync"""
+        """Invoke rsync."""
         if not files:
             raise GsyncdError("no files to sync")
         logging.debug("files: " + ", ".join(files))
@@ -1536,7 +1533,8 @@ class SSH(object):
         return po
 
     def tarssh(self, files, log_err=False):
-        """invoke tar+ssh
+        """Invoke tar+ssh.
+
         -z (compress) can be use if needed, but omitting it now
         as it results in weird error (tar+ssh errors out (errcode: 2)
         """
