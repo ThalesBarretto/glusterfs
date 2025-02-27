@@ -305,6 +305,7 @@ loc_stat_op_fop_template = ['lookup', 'stat', 'discover', 'access', 'setattr',
 special_fops = ['statfs', 'setxattr', 'unlink', 'getxattr',
                 'truncate', 'fstat', 'readv', 'readdirp']
 
+
 def gen_defaults():
     for name in ops:
         if name in fd_data_modify_op_fop_template:
@@ -314,6 +315,7 @@ def gen_defaults():
         elif name in loc_stat_op_fop_template:
             print(generate(LOC_STAT_OP_FOP_CBK_TEMPLATE, name, cbk_subs))
             print(generate(LOC_STAT_OP_FOP_TEMPLATE, name, fop_subs))
+
 
 for l in open(sys.argv[1], 'r').readlines():
     if l.find('#pragma generate') != -1:
