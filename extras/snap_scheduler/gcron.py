@@ -147,7 +147,7 @@ def main():
         # the GCRON_RELOAD_FLAG
         if os.path.exists(GCRON_RELOAD_FLAG):
             try:
-                os.remove(GCRON_RELOAD_FLAG);
+                os.remove(GCRON_RELOAD_FLAG)
                 process = subprocess.Popen(["touch", "-h", GCRON_CROND_TASK],
                                            stdout=subprocess.PIPE,
                                            stderr=subprocess.PIPE)
