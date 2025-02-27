@@ -20,6 +20,7 @@ def launch():
         "-x", __file__
     ])
 
+
 class GFCore(object):
     def __init__(self, count, base):
         self.count = count
@@ -30,8 +31,8 @@ class GFCore(object):
 
         self.cont()
 
-    def cont(self, quit = False):
-        if not(quit) and (self.count > 0):
+    def cont(self, quit=False):
+        if not (quit) and (self.count > 0):
             gdb.execute('continue')
         else:
             gdb.execute('set gf_signal_on_assert = 0')
@@ -59,6 +60,7 @@ class GFCore(object):
             print("Unexpected event {}".format(type(event)))
 
         self.cont(quit)
+
 
 # Module 'gdb' is not available when running outside gdb.
 try:
