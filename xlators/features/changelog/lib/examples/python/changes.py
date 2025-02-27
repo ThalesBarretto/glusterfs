@@ -1,12 +1,15 @@
 #!/usr/bin/python3
 
 from __future__ import print_function
+
 import os
 import sys
 import time
+
 import libgfchangelog
 
 cl = libgfchangelog.Changes()
+
 
 def get_changes(brick, scratch_dir, log_file, log_level, interval):
     change_list = []
@@ -25,6 +28,7 @@ def get_changes(brick, scratch_dir, log_file, log_level, interval):
     except OSError:
         ex = sys.exc_info()[1]
         print(ex)
+
 
 if __name__ == '__main__':
     if len(sys.argv) != 6:
