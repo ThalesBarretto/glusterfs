@@ -2,24 +2,25 @@
 
 from __future__ import absolute_import
 from __future__ import division
-from __future__ import unicode_literals
 from __future__ import print_function
-import re
-import sys
-import fcntl
-import base64
-import threading
-import socket
-import os
-import shlex
+from __future__ import unicode_literals
+
 import argparse
+import base64
+import fcntl
+import os
+import re
+import shlex
+import socket
 import subprocess
+import sys
+import threading
 import time
+import uuid
+import httplib
+import md5
 import SimpleXMLRPCServer
 import xmlrpclib
-import md5
-import httplib
-import uuid
 
 DEFAULT_PORT = 9999
 TEST_TIMEOUT_S = 15 * 60
@@ -193,12 +194,12 @@ class Shell:
     def ssh(self, hostname, cmd, id_rsa=None):
         flags = "" if not id_rsa else "-i " + id_rsa
         return self.call("timeout %s ssh %s root@%s \"%s\"" %
-                            (SSH_TIMEOUT_S, flags, hostname, cmd))
+                         (SSH_TIMEOUT_S, flags, hostname, cmd))
 
     def scp(self, hostname, src, dest, id_rsa=None):
         flags = "" if not id_rsa else "-i " + id_rsa
         return self.call("timeout %s scp %s %s root@%s:%s" %
-                            (SSH_TIMEOUT_S, flags, src, hostname, dest))
+                         (SSH_TIMEOUT_S, flags, src, hostname, dest))
 
     def output(self, cmd, cwd=None):
         Log.debug("%s> %s" % (cwd, cmd))
@@ -374,7 +375,8 @@ class Handlers:
         self.shell.call("make clean")
         env = "ASAN_ENABLED=1" if asan else ""
         return self.shell.call(
-		"%s ./extras/distributed-testing/distributed-test-build.sh" % env) == 0
+                "%s ./extras/distributed-testing/distributed-test-build.sh"
+                % env) == 0
 
     @synchronized
     def install(self, id):
@@ -400,8 +402,8 @@ class Handlers:
         else:
             cmd = "prove -v"
 
-        status = self.shell.call(
-		"%s timeout %s %s %s" % (env, timeout, cmd, test))
+        status = self.shell.call("%s timeout %s %s %s"
+                                 % (env, timeout, cmd, test))
 
         if status != 0:
             return (False, self._log_content())
@@ -497,7 +499,7 @@ class RPCConnection((threading.Thread)):
 
     def _copy_gzip(self):
         Log.cli("<%s> copying and compiling %s to remote" %
-                 (self.logid, self.path))
+                (self.logid, self.path))
         data = encode(get_file_content(patch_file()))
         Log.debug("GZIP size = %s B" % len(data))
         return self.proxy.copygzip(self.cb.id, data)
