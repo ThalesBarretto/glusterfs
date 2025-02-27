@@ -28,4 +28,5 @@ class RConf(object):
     mount_point = None
     mbr_umount_cmd = []
 
+
 rconf = RConf()
