@@ -1,4 +1,4 @@
-#!/bin/python2
+!/bin/python2
 
 """
   Copyright (c) 2016 Red Hat, Inc. <http://www.redhat.com>
@@ -76,17 +76,20 @@
 """
 
 from __future__ import print_function
-import os
-import sys
+
 import argparse
-import commands
+import os
 import subprocess
+import sys
+
+import commands
 import requests
 
+
 class GitBranchDiff:
-    def __init__ (self):
-        " color symbols"
-        self.tick  = u'\033[1;32m[ \u2714 ]\033[0m'
+    def __init__(self):
+        "Color symbols."
+        self.tick = u'\033[1;32m[ \u2714 ]\033[0m'
         self.cross = u'\033[1;31m[ \u2716 ]\033[0m'
         self.green_set = u'\033[1;34m'
         self.yello_set = u'\033[4;33m'
@@ -94,26 +97,26 @@ class GitBranchDiff:
 
         self.parse_cmd_args()
 
-        " replace default values with actual values from command args"
+        # replace default values with actual values from command args
         self.g_author = self.argsdict['author']
-        self.s_pattern  = self.argsdict['source']
-        self.t_pattern  = self.argsdict['target']
-        self.r_path     = self.argsdict['path']
-        self.options    = ' '.join(self.argsdict['options'])
+        self.s_pattern = self.argsdict['source']
+        self.t_pattern = self.argsdict['target']
+        self.r_path = self.argsdict['path']
+        self.options = ' '.join(self.argsdict['options'])
 
         self.gerrit_server = "http://review.gluster.org"
 
-    def check_dir_exist (self, os_path):
-        " checks whether given path exist"
+    def check_dir_exist(self, os_path):
+        "Check whether given path exist."
         path_list = os_path.split()
         for path in path_list:
             if not os.path.exists(path):
                 raise argparse.ArgumentTypeError("'%s' path %s is not valid"
-                                                 %(os_path, path))
+                                                 % (os_path, path))
         return os_path
 
-    def check_pattern_exist (self):
-        " defend to check given branch[s] exit"
+    def check_pattern_exist(self):
+        "Defend to check given branch[s] exit."
         status_sbr, op = commands.getstatusoutput('git log ' +
                                                   self.s_pattern)
         status_tbr, op = commands.getstatusoutput('git log ' +
@@ -127,8 +130,8 @@ class GitBranchDiff:
             self.parser.print_help()
             exit(status_tbr)
 
-    def check_author_exist (self):
-        " defend to check given author exist, format in case of multiple"
+    def check_author_exist(self):
+        "Defend to check given author exist, format in case of multiple."
         contrib_list = ['', '*', 'all', 'All', 'ALL', 'null', 'Null', 'NULL']
         if self.g_author in contrib_list:
             self.g_author = ""
@@ -136,118 +139,115 @@ class GitBranchDiff:
             ide_list = self.g_author.split(',')
             for ide in ide_list:
                 cmd4 = 'git log ' + self.s_pattern + ' --author=' + ide
-                c_list = subprocess.check_output(cmd4, shell = True)
+                c_list = subprocess.check_output(cmd4, shell=True)
                 if len(c_list) is 0:
-                    print("Error: --author=%s doesn't exit" %self.g_author)
-                    print("see '%s --help'" %__file__)
+                    print("Error: --author=%s doesn't exit" % self.g_author)
+                    print("see '%s --help'" % __file__)
                     exit(1)
             if len(ide_list) > 1:
                 self.g_author = "\|".join(ide_list)
 
-    def connected_to_gerrit (self):
-        "check if gerrit server is reachable"
+    def connected_to_gerrit(self):
+        "Check if gerrit server is reachable."
         try:
             r = requests.get(self.gerrit_server, timeout=3)
             return True
         except requests.Timeout as err:
-            " request timed out"
-            print("Warning: failed to get list of open review commits on " \
-                            "gerrit.\n" \
-                  "hint: Request timed out! gerrit server could possibly " \
-                  "slow ...\n")
+            # request timed out
+            print("Warning: failed to get list of open review commits on gerrit.\n"
+                  "hint: Request timed out! gerrit server could possibly slow ...\n")
             return False
         except requests.RequestException as err:
-            " handle other errors"
-            print("Warning: failed to get list of open review commits on " \
-                            "gerrit\n" \
+            # handle other errors
+            print("Warning: failed to get list of open review commits on gerrit\n"
                   "hint: check with internet connection ...\n")
             return False
 
-    def parse_cmd_args (self):
-        " command line parser"
+    def parse_cmd_args(self):
+        "Parse command line."
         author = subprocess.check_output('git config user.email',
-                                                  shell = True).rstrip('\n')
+                                         shell=True).rstrip('\n')
         source = "remotes/origin/master"
-        options  = [' --pretty=format:"%h %s" ']
+        options = [' --pretty=format:"%h %s" ']
         path = subprocess.check_output('git rev-parse --show-toplevel',
-                                            shell = True).rstrip('\n')
-        self.parser = argparse.ArgumentParser(description = 'git wrapper to '
+                                       shell=True).rstrip('\n')
+        self.parser = argparse.ArgumentParser(description='git wrapper to '
                                               'diff local or remote branches/'
                                               'tags/commit-ranges')
         self.parser.add_argument('-s',
                                  '--source',
-                                 help = 'source pattern, it could be a branch,'
-                                        ' tag or a commit range',
-                                 default = source,
-                                 dest = 'source')
+                                 help='source pattern, it could be a branch,'
+                                      ' tag or a commit range',
+                                 default=source,
+                                 dest='source')
         self.parser.add_argument('-t',
                                  '--target',
-                                 help = 'target pattern, it could be a branch,'
-                                        ' tag or a commit range',
-                                 required = True,
-                                 dest = 'target')
+                                 help='target pattern, it could be a branch,'
+                                      ' tag or a commit range',
+                                 required=True,
+                                 dest='target')
         self.parser.add_argument('-a',
                                  '--author',
-                                 help = 'default: git config name/email, '
-                                        'to provide multiple specify comma'
-                                        ' separated values',
-                                 default = author,
-                                 dest = 'author')
+                                 help='default: git config name/email, '
+                                      'to provide multiple specify comma'
+                                      ' separated values',
+                                 default=author,
+                                 dest='author')
         self.parser.add_argument('-p',
                                  '--path',
-                                 type = self.check_dir_exist,
-                                 help = 'show source and target diff w.r.t '
-                                        'given path, to provide multiple '
-                                        'specify space in between them',
-                                 default = path,
-                                 dest = 'path')
+                                 type=self.check_dir_exist,
+                                 help='show source and target diff w.r.t '
+                                      'given path, to provide multiple '
+                                      'specify space in between them',
+                                 default=path,
+                                 dest='path')
         self.parser.add_argument('-o',
                                  '--options',
-                                 help = 'add other git options such as '
-                                        '--after=<>, --before=<> etc. '
-                                        'experts use;',
-                                 default = options,
-                                 dest = 'options',
+                                 help='add other git options such as '
+                                      '--after=<>, --before=<> etc. '
+                                      'experts use;',
+                                 default=options,
+                                 dest='options',
                                  action='append')
         self.argsdict = vars(self.parser.parse_args())
 
-    def print_output (self):
-        " display the result list"
+    def print_output(self):
+        "Display the result list."
         print("\n------------------------------------------------------------\n")
         print(self.tick + " Successfully Backported changes:")
-        print('      {' + 'from: ' + self.s_pattern + \
-              '  to: '+ self.t_pattern + '}\n')
+        print('      {' + 'from: ' + self.s_pattern +
+              '  to: ' + self.t_pattern + '}\n')
         for key, value in self.s_dict.items():
             if value in self.t_dict.itervalues():
-                print("[%s%s%s] %s" %(self.yello_set,
-                                      key,
-                                      self.color_unset,
-                                      value))
+                print("[%s%s%s] %s" % (self.yello_set,
+                                       key,
+                                       self.color_unset,
+                                       value))
         print("\n------------------------------------------------------------\n")
         print(self.cross + " Missing patches in " + self.t_pattern + ':\n')
         if self.connected_to_gerrit():
             cmd3 = "git review -r origin -l"
-            review_list = subprocess.check_output(cmd3, shell = True).split('\n')
+            review_list = subprocess.check_output(cmd3, shell=True).split('\n')
         else:
             review_list = []
 
         for key, value in self.s_dict.items():
             if value not in self.t_dict.itervalues():
                 if any(value in s for s in review_list):
-                    print("[%s%s%s] %s %s(under review)%s" %(self.yello_set,
-                                                            key,
-                                                            self.color_unset,
-                                                            value,
-                                                            self.green_set,
-                                                            self.color_unset))
+                    print("[%s%s%s] %s %s(under review)%s" % (self.yello_set,
+                                                              key,
+                                                              self.color_unset,
+                                                              value,
+                                                              self.green_set,
+                                                              self.color_unset))
                 else:
-                    print("[%s%s%s] %s" %(self.yello_set,
-                                          key,
-                                          self.color_unset,
-                                          value))
+                    print("[%s%s%s] %s" % (self.yello_set,
+                                           key,
+                                           self.color_unset,
+                                           value))
         print("\n------------------------------------------------------------\n")
 
-    def main (self):
+    def main(self):
         self.check_pattern_exist()
         self.check_author_exist()
 
@@ -259,12 +259,12 @@ class GitBranchDiff:
         cmd2 = 'git log' + self.options + ' ' + self.t_pattern + \
                ' ' + self.r_path
 
-        s_list = subprocess.check_output(cmd1, shell = True).split('\n')
-        t_list = subprocess.check_output(cmd2, shell = True)
+        s_list = subprocess.check_output(cmd1, shell=True).split('\n')
+        t_list = subprocess.check_output(cmd2, shell=True)
 
         if len(t_list) is 0:
-            print("No commits in the target: %s" %self.t_pattern)
-            print("see '%s --help'" %__file__)
+            print("No commits in the target: %s" % self.t_pattern)
+            print("see '%s --help'" % __file__)
             exit()
         else:
             t_list = t_list.split('\n')
