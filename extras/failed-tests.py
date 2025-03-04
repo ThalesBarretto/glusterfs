@@ -28,7 +28,7 @@ def process_failure(url, node):
                 if VERBOSE:
                     print(t2.encode('utf-8'))
                 if t2.find("Wstat") != -1:
-                    test_case = re.search('\./tests/.*\.t', t2)
+                    test_case = re.search(r'\./tests/.*\.t', t2)
                     if test_case:
                         summary[test_case.group()].append((url, node))
             accum = []
