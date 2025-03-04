@@ -109,7 +109,7 @@ class GenCmd(Cmd):
         with open(COMMON_SECRET_FILE, "w") as f:
             f.write("\n".join(common_secrets) + "\n")
 
-        print (table)
+        print(table)
 
 
 if __name__ == "__main__":
