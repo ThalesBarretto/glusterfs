@@ -152,9 +152,7 @@ def mkdirp(path, exit_on_err=False, logger=None):
 
 
 def fail(msg, code=1, logger=None):
-    """
-    Write error to stderr and exit
-    """
+    """Write error to stderr and exit."""
     if logger:
         logger.error(msg)
     sys.stderr.write("%s\n" % msg)
