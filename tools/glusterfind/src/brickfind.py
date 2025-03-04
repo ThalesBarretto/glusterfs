@@ -13,15 +13,16 @@ import os
 import sys
 import logging
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
+
 try:
     import urllib.parse as urllib
 except ImportError:
     import urllib
+
 import time
 
 from utils import mkdirp, setup_logger, create_file, output_write, find
 import conf
-
 
 PROG_DESCRIPTION = """
 Changelog Crawler
@@ -51,10 +52,10 @@ def brickfind_crawl(brick, args):
                              field_separator=args.field_separator)
             else:
                 if (is_dir and args.type == "d") or (
-                    (not is_dir) and args.type == "f"):
+                  (not is_dir) and args.type == "f"):
                     output_write(fout, path, args.output_prefix,
-                    encode=(not args.no_encode), tag=args.tag,
-                    field_separator=args.field_separator)
+                                 encode=(not args.no_encode), tag=args.tag,
+                                 field_separator=args.field_separator)
 
         ignore_dirs = [os.path.join(brick, dirname)
                        for dirname in
@@ -98,7 +99,7 @@ if __name__ == "__main__":
     args = _get_args()
     session_dir = os.path.join(conf.get_opt("session_dir"), args.session)
     status_file = os.path.join(session_dir, args.volume,
-                     "%s.status" % urllib.quote_plus(args.brick))
+                               "%s.status" % urllib.quote_plus(args.brick))
     status_file_pre = status_file + ".pre"
     mkdirp(os.path.join(session_dir, args.volume), exit_on_err=True,
            logger=logger)
