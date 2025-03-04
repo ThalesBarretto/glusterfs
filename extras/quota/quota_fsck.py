@@ -171,12 +171,12 @@ def get_quota_xattr_brick(dpath):
         if xattr_key == "":
             # skip any empty lines
             continue
-        elif not re.search("quota", xattr_key):
+        elif not re.search(r"quota", xattr_key):
             # skip all non quota xattr.
             continue
 
         xattr_value = xattr.split("=")[1]
-        if re.search("contri", xattr_key):
+        if re.search(r"contri", xattr_key):
 
             xattr_version = xattr_key.split(".")[5]
             if 'version' not in xattr_dict:
@@ -207,14 +207,14 @@ def get_quota_xattr_brick(dpath):
             xattr_dict['size'] = int(xattr_value[2:18], 16)
             xattr_dict['file_count'] = int(xattr_value[18:34], 16)
             xattr_dict['dir_count'] = int(xattr_value[34:], 16)
-        elif re.search("dirty", xattr_key):
+        elif re.search(r"dirty", xattr_key):
             if xattr_value == IS_CLEAN:
                 xattr_dict['dirty'] = False
             elif xattr_value == IS_DIRTY:
                 xattr_dict['dirty'] = True
-        elif re.search("limit_objects", xattr_key):
+        elif re.search(r"limit_objects", xattr_key):
             xattr_dict['limit_objects'] = int(xattr_value[2:18], 16)
-        elif re.search("limit_set", xattr_key):
+        elif re.search(r"limit_set", xattr_key):
             xattr_dict['limit_set'] = int(xattr_value[2:18], 16)
 
     return xattr_dict
