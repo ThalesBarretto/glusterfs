@@ -808,7 +808,7 @@ class Server(object):
             val = struct.pack(cls.FRGN_FMTSTR,
                               *(dct['version'] +
                                 tuple(int(x, 16)
-                                      for x in re.findall('(?:[\da-f]){2}',
+                                      for x in re.findall(r'(?:[\da-f]){2}',
                                                           dct['uuid'])) +
                                 (dct['retval'],) + dct['volume_mark'][0:2] + (
                                     dct['timeout'],)))
