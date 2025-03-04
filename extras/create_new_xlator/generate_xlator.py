@@ -170,7 +170,7 @@ def get_copyright():
 
 
 def load_fragments():
-    pragma_re = re.compile('pragma fragment (.*)')
+    pragma_re = re.compile(r'pragma fragment (.*)')
     cur_symbol = None
     cur_value = ""
     result = {}
