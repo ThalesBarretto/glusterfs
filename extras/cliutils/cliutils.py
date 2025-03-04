@@ -59,21 +59,21 @@ def oknotok(flag):
 
 
 def output_error(message, errcode=1):
-    print (message, file=sys.stderr)
+    print(message, file=sys.stderr)
     sys.exit(errcode)
 
 
 def node_output_ok(message=""):
     # Prints Success JSON output and exits with returncode zero
     out = {"ok": True, "nodeid": get_node_uuid(), "output": message}
-    print (json.dumps(out))
+    print(json.dumps(out))
     sys.exit(0)
 
 
 def node_output_notok(message):
     # Prints Error JSON output and exits with returncode zero
     out = {"ok": False, "nodeid": get_node_uuid(), "error": message}
-    print (json.dumps(out))
+    print(json.dumps(out))
     sys.exit(0)
 
 
