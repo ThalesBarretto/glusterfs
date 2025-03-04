@@ -125,7 +125,7 @@ class MountbrokerUserMgmt(object):
                     pass
 
     def info(self):
-        # Convert Volumes set into Volumes list
+        "Convert Volumes set into Volumes list."
         users = {}
         for k, v in self.user_volumes.items():
             users[k] = list(v)
@@ -396,6 +396,7 @@ class CliRemove(Cmd):
                                p.error)])
 
         print(table)
+
 
 if __name__ == "__main__":
     runcli()
