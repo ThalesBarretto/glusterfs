@@ -140,12 +140,12 @@ class GitBranchDiff:
             for ide in ide_list:
                 cmd4 = 'git log ' + self.s_pattern + ' --author=' + ide
                 c_list = subprocess.check_output(cmd4, shell=True)
-                if len(c_list) is 0:
+                if len(c_list) == 0:
                     print("Error: --author=%s doesn't exit" % self.g_author)
                     print("see '%s --help'" % __file__)
                     exit(1)
             if len(ide_list) > 1:
-                self.g_author = "\|".join(ide_list)
+                self.g_author = r"\|".join(ide_list)
 
     def connected_to_gerrit(self):
         "Check if gerrit server is reachable."
