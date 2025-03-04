@@ -39,7 +39,6 @@ from gfevents.eventsapiconf import (LOG_FILE,
                                     CERTS_DIR)
 from gfevents import eventtypes
 
-
 # Webhooks list
 _webhooks = {}
 _webhooks_file_mtime = 0
@@ -315,11 +314,11 @@ def plugin_webhook(message):
 
 
 class NamedTempOpen(object):
-    """
-        This class is used to create a temporary file which is then written to with contents.
+    """ Create a temporary file which is then written to with contents.
+
         The temp file is then persisted with the give name by calling os.rename().
-        This class is used to avoid the data loss or truncation in case of multiple processes
-        writing to the same file without the use of fcntl locks.
+        This class is used to avoid the data loss or truncation in case of multiple
+        processes writing to the same file without the use of fcntl locks.
 
         The temporary file is created in the dest dir of the file.
     """
@@ -353,8 +352,8 @@ class NamedTempOpen(object):
         else:
             os.rename(self.fileobj.name, self.filename)
 
-class LockedOpen(object):
 
+class LockedOpen(object):
     def __init__(self, filename, *args, **kwargs):
         self.filename = filename
         self.open_args = args
