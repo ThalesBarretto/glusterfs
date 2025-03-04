@@ -1,79 +1,79 @@
 !/bin/python2
 
-"""
-  Copyright (c) 2016 Red Hat, Inc. <http://www.redhat.com>
-  This file is part of GlusterFS.
+#
+# Copyright (c) 2016 Red Hat, Inc. <http://www.redhat.com>
+# This file is part of GlusterFS.
 
-  This file is licensed to you under your choice of the GNU Lesser
-  General Public License, version 3 or any later version (LGPLv3 or
-  later), or the GNU General Public License, version 2 (GPLv2), in all
-  cases as published by the Free Software Foundation.
-"""
+# This file is licensed to you under your choice of the GNU Lesser
+# General Public License, version 3 or any later version (LGPLv3 or
+# later), or the GNU General Public License, version 2 (GPLv2), in all
+# cases as published by the Free Software Foundation.
+#
 
-"""
-  ABOUT:
-  This script helps in visualizing backported and missed commits between two
-  different branches, tags or commit ranges. In the list of missed commits,
-  it will help you identify patches which are posted for reviews on gerrit server.
+#
+# ABOUT:
+# This script helps in visualizing backported and missed commits between two
+# different branches, tags or commit ranges. In the list of missed commits,
+# it will help you identify patches which are posted for reviews on gerrit server.
 
-  USAGE:
-    $ ./extras/git-branch-diff.py --help
-    usage: git-branch-diff.py [-h] [-s SOURCE] -t TARGET [-a AUTHOR] [-p PATH]
-                              [-o OPTIONS]
+# USAGE:
+#   $ ./extras/git-branch-diff.py --help
+#   usage: git-branch-diff.py [-h] [-s SOURCE] -t TARGET [-a AUTHOR] [-p PATH]
+#                             [-o OPTIONS]
 
-    git wrapper to diff local or remote branches/tags/commit-ranges
+#   git wrapper to diff local or remote branches/tags/commit-ranges
 
-    optional arguments:
-      -h, --help            show this help message and exit
-      -s SOURCE, --source SOURCE
-                            source pattern, it could be a branch, tag or a commit
-                            range
-      -t TARGET, --target TARGET
-                            target pattern, it could be a branch, tag or a commit
-                            range
-      -a AUTHOR, --author AUTHOR
-                            default: git config name/email, to provide multiple
-                            specify comma separated values
-      -p PATH, --path PATH  show source and target diff w.r.t given path, to
-                            provide multiple specify space in between them
-      -o OPTIONS, --options OPTIONS
-                            add other git options such as --after=<>, --before=<>
-                            etc. experts use;
+#   optional arguments:
+#     -h, --help            show this help message and exit
+#     -s SOURCE, --source SOURCE
+#                           source pattern, it could be a branch, tag or a commit
+#                           range
+#     -t TARGET, --target TARGET
+#                           target pattern, it could be a branch, tag or a commit
+#                           range
+#     -a AUTHOR, --author AUTHOR
+#                           default: git config name/email, to provide multiple
+#                           specify comma separated values
+#     -p PATH, --path PATH  show source and target diff w.r.t given path, to
+#                           provide multiple specify space in between them
+#     -o OPTIONS, --options OPTIONS
+#                           add other git options such as --after=<>, --before=<>
+#                           etc. experts use;
 
-  SAMPLE EXECUTIONS:
-  $ ./extras/git-branch-diff.py -t origin/release-3.8
+# SAMPLE EXECUTIONS:
+# $ ./extras/git-branch-diff.py -t origin/release-3.8
 
-  $ ./extras/git-branch-diff.py -s local_branch -t origin/release-3.7
+# $ ./extras/git-branch-diff.py -s local_branch -t origin/release-3.7
 
-  $ ./extras/git-branch-diff.py -s 4517bf8..e66add8 -t origin/release-3.7
-  $ ./extras/git-branch-diff.py -s HEAD..c4efd39 -t origin/release-3.7
+# $ ./extras/git-branch-diff.py -s 4517bf8..e66add8 -t origin/release-3.7
+# $ ./extras/git-branch-diff.py -s HEAD..c4efd39 -t origin/release-3.7
 
-  $ ./extras/git-branch-diff.py -t v3.7.11 --author="author@redhat.com"
-  $ ./extras/git-branch-diff.py -t v3.7.11 --author="authorX, authorY, authorZ"
+# $ ./extras/git-branch-diff.py -t v3.7.11 --author="author@redhat.com"
+# $ ./extras/git-branch-diff.py -t v3.7.11 --author="authorX, authorY, authorZ"
 
-  $ ./extras/git-branch-diff.py -t origin/release-3.8 --path="xlators/"
-  $ ./extras/git-branch-diff.py -t origin/release-3.8 --path="./xlators ./rpc"
+# $ ./extras/git-branch-diff.py -t origin/release-3.8 --path="xlators/"
+# $ ./extras/git-branch-diff.py -t origin/release-3.8 --path="./xlators ./rpc"
 
-  $ ./extras/git-branch-diff.py -t origin/release-3.6 --author="*"
-  $ ./extras/git-branch-diff.py -t origin/release-3.6 --author="All"
-  $ ./extras/git-branch-diff.py -t origin/release-3.6 --author="Null"
+# $ ./extras/git-branch-diff.py -t origin/release-3.6 --author="*"
+# $ ./extras/git-branch-diff.py -t origin/release-3.6 --author="All"
+# $ ./extras/git-branch-diff.py -t origin/release-3.6 --author="Null"
 
-  $ ./extras/git-branch-diff.py -t v3.7.11 --options="--after=2015-03-01 \
-                                                      --before=2016-01-30"
+# $ ./extras/git-branch-diff.py -t v3.7.11 --options="--after=2015-03-01 \
+#                                                     --before=2016-01-30"
 
-  DECLARATION:
-  While backporting commit to another branch only subject of the patch may
-  remain unchanged, all others such as commit message,  commit Id, change Id,
-  bug Id, may be changed. This script works by taking commit subject as the
-  key value for comparing two git branches, which can be local or remote.
+# DECLARATION:
+# While backporting commit to another branch only subject of the patch may
+# remain unchanged, all others such as commit message,  commit Id, change Id,
+# bug Id, may be changed. This script works by taking commit subject as the
+# key value for comparing two git branches, which can be local or remote.
 
-  Note: This script may ignore commits which have altered their commit subjects
-  while backporting patches. Also this script doesn't have any intelligence to
-  detect squashed commits.
+# Note: This script may ignore commits which have altered their commit subjects
+# while backporting patches. Also this script doesn't have any intelligence to
+# detect squashed commits.
 
-  AUTHOR:
-  Prasanna Kumar Kalever <prasanna.kalever@redhat.com>
-"""
+# AUTHOR:
+# Prasanna Kumar Kalever <prasanna.kalever@redhat.com>
+#
 
 from __future__ import print_function
 
