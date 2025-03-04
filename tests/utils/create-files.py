@@ -345,7 +345,7 @@ def human2bytes(size):
         1024*1024: ['M', 'MB', 'MiB'],
         1024*1024*1024: ['G', 'GB', 'GiB']
     }
-    num = re.search('(\d+)', size).group()
+    num = re.search(r'(\d+)', size).group()
     ext = size[len(num):]
     num = int(num)
     if ext == '':
