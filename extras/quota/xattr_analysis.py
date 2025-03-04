@@ -8,20 +8,23 @@
 #  find <brick_path> | xargs  getfattr -d -m. -e hex  > log_gluster_xattr
 
 from __future__ import print_function
+
 import re
 import subprocess
 import sys
+
 from hurry.filesize import size
 
 if len(sys.argv) < 2:
     sys.exit('Usage: %s log_gluster_xattr \n'
-              'to generate log_gluster_xattr use: \n'
-              'find <brick_path> | xargs  getfattr -d -m. -e hex  > log_gluster_xattr'
-              % sys.argv[0])
-LOG_FILE=sys.argv[1]
+             'to generate log_gluster_xattr use: \n'
+             'find <brick_path> | xargs  getfattr -d -m. -e hex  > log_gluster_xattr'
+             % sys.argv[0])
+LOG_FILE = sys.argv[1]
+
 
 def get_quota_xattr_brick():
-    out = subprocess.check_output (["/usr/bin/cat", LOG_FILE])
+    out = subprocess.check_output(["/usr/bin/cat", LOG_FILE])
     pairs = out.splitlines()
 
     xdict = {}
@@ -30,7 +33,7 @@ def get_quota_xattr_brick():
         k = xattr.split("=")[0]
         if re.search("# file:", k):
             print(xdict)
-            filename=k
+            filename = k
             print("=====" + filename + "=======")
             xdict = {}
         elif k is "":
@@ -40,7 +43,8 @@ def get_quota_xattr_brick():
             v = xattr.split("=")[1]
             if re.search("contri", k):
                 if len(v) == 34:
-                    # for files size is obtained in iatt, file count should be 1, dir count=0
+                    # for files size is obtained in iatt, file count
+                    # should be 1, dir count=0
                     xdict['contri_file_count'] = int(v[18:34], 16)
                     xdict['contri_dir_count'] = 0
                 else:
@@ -70,4 +74,3 @@ def get_quota_xattr_brick():
 
 if __name__ == '__main__':
     get_quota_xattr_brick()
-
