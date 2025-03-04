@@ -287,7 +287,7 @@ def get_changes(brick, hash_dir, log_file, start, end, args):
     session_dir = os.path.join(conf.get_opt("session_dir"),
                                args.session)
     status_file = os.path.join(session_dir, args.volume,
-                     "%s.status" % urllib.quote_plus(args.brick))
+                               "%s.status" % urllib.quote_plus(args.brick))
 
     # Get previous session
     try:
@@ -415,7 +415,7 @@ def _get_args():
                         action="store_true")
     parser.add_argument("--output-prefix", help="File prefix in output",
                         default=".")
-    parser.add_argument("--type",default="both")
+    parser.add_argument("--type", default="both")
     parser.add_argument("-N", "--only-namespace-changes",
                         help="List only namespace changes",
                         action="store_true")
@@ -435,7 +435,7 @@ if __name__ == "__main__":
 
     session_dir = os.path.join(conf.get_opt("session_dir"), args.session)
     status_file = os.path.join(session_dir, args.volume,
-                     "%s.status" % urllib.quote_plus(args.brick))
+                               "%s.status" % urllib.quote_plus(args.brick))
     status_file_pre = status_file + ".pre"
     mkdirp(os.path.join(session_dir, args.volume), exit_on_err=True,
            logger=logger)
