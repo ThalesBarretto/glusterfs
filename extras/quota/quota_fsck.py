@@ -1,17 +1,19 @@
 #!/usr/bin/python3
-# The following script enables, Detecting, Reporting and Fixing
-# anomalies in quota accounting. Run this script with -h option
-# for further details.
+"""Extras quota/quota-fsck.
 
+The following script enables, Detecting, Reporting and Fixing
+anomalies in quota accounting. Run this script with -h option
+for further details.
 """
-   Copyright (c) 2018 Red Hat, Inc. <http://www.redhat.com>
-   This file is part of GlusterFS.
 
-   This file is licensed to you under your choice of the GNU Lesser
-   General Public License, version 3 or any later version (LGPLv3 or
-   later), or the GNU General Public License, version 2 (GPLv2), in all
-   cases as published by the Free Software Foundation.
-"""
+#   Copyright (c) 2018 Red Hat, Inc. <http://www.redhat.com>
+#   This file is part of GlusterFS.
+#
+#   This file is licensed to you under your choice of the GNU Lesser
+#   General Public License, version 3 or any later version (LGPLv3 or
+#   later), or the GNU General Public License, version 2 (GPLv2), in all
+#   cases as published by the Free Software Foundation.
+
 from __future__ import print_function
 
 import argparse
@@ -86,34 +88,34 @@ def size_differs_lot(s1, s2):
 
 
 def fix_hardlink_accounting(curr_dict, accounted_dict, curr_size):
+    """Fix hardlink accounting.
+
+    Hard links are messy.. we have to account them for their parent
+    directory. But, stop accounting at the most common ancestor.
+    Eg:
+        say we have 3 hardlinks : /d1/d2/h1, /d1/d3/h2 and /d1/h3
+
+    suppose we encounter the hard links h1 first , then h2 and then h3.
+    while accounting for h1, we account the size until root(d2->d1->/)
+    while accounting for h2, we need to account only till d3. (as d1
+    and / are accounted for this inode).
+    while accounting for h3 we should not account at all.. as all
+    its ancestors are already accounted for same inode.
+
+    curr_dict                : dict of hardlinks that were seen and
+                               accounted by the current iteration.
+    accounted_dict           : dict of hardlinks that has already been
+                               accounted for.
+
+    size                     : size of the object as accounted by the
+                               curr_iteration.
+
+    Return vale:
+    curr_size                : size reduced by hardlink sizes for those
+                               hardlinks that has already been accounted
+                               in current subtree.
+    Also delete the duplicate link from curr_dict.
     """
-            Hard links are messy.. we have to account them for their parent
-            directory. But, stop accounting at the most common ancestor.
-            Eg:
-                say we have 3 hardlinks : /d1/d2/h1, /d1/d3/h2 and /d1/h3
-
-            suppose we encounter the hard links h1 first , then h2 and then h3.
-            while accounting for h1, we account the size until root(d2->d1->/)
-            while accounting for h2, we need to account only till d3. (as d1
-            and / are accounted for this inode).
-            while accounting for h3 we should not account at all.. as all
-            its ancestors are already accounted for same inode.
-
-            curr_dict                : dict of hardlinks that were seen and
-                                       accounted by the current iteration.
-            accounted_dict           : dict of hardlinks that has already been
-                                       accounted for.
-
-            size                     : size of the object as accounted by the
-                                       curr_iteration.
-
-            Return vale:
-            curr_size                : size reduced by hardlink sizes for those
-                                       hardlinks that has already been accounted
-                                       in current subtree.
-            Also delete the duplicate link from curr_dict.
-    """
-
     dual_accounted_links = set(curr_dict.keys()) & set(accounted_dict.keys())
     for link in dual_accounted_links:
         curr_size = curr_size - curr_dict[link]
@@ -144,24 +146,18 @@ def get_quota_xattr_brick(dpath):
                                    "-d", "-m.", "-e", "hex", dpath])
     pairs = out.splitlines()
 
-    """
-    Sample output to be parsed:
-    [root@dhcp35-100 mnt]# getfattr -d -m. -e hex /export/b1/B0/d14/d13/
-    # file: export/b1/B0/d14/d13/
-    security.selinux=0x756e636f6e66696e65645f753a6f626a6563745f723a7573725f743a733000
-    trusted.gfid=0xbae5e0d2d05043de9fd851d91ecf63e8
-    trusted.glusterfs.dht=0x000000010000000000000000ffffffff
-    trusted.glusterfs.dht.mds=0x00000000
-    trusted.glusterfs.quota.6a7675a3-b85a-40c5-830b-de9229d702ce.contri.39=0x00000000000000000000000000000000000000000000000e
-    trusted.glusterfs.quota.dirty=0x3000
-    trusted.glusterfs.quota.size.39=0x00000000000000000000000000000000000000000000000e
-    """
+    # Sample output to be parsed:
+    # [root@dhcp35-100 mnt]# getfattr -d -m. -e hex /export/b1/B0/d14/d13/
+    # # file: export/b1/B0/d14/d13/
+    # security.selinux=0x756e636f6e66696e65645f753a6f626a6563745f723a7573725f743a733000
+    # trusted.gfid=0xbae5e0d2d05043de9fd851d91ecf63e8
+    # trusted.glusterfs.dht=0x000000010000000000000000ffffffff
+    # trusted.glusterfs.dht.mds=0x00000000
+    # trusted.glusterfs.quota.6a7675a3-b85a-40c5-830b-de9229d702ce.contri.39=0x00000000000000000000000000000000000000000000000e
+    # trusted.glusterfs.quota.dirty=0x3000
+    # trusted.glusterfs.quota.size.39=0x00000000000000000000000000000000000000000000000e
 
-    """
-    xattr_dict dictionary holds quota related xattrs
-    eg:
-    """
-
+    # xattr_dict dictionary holds quota related xattrs
     xattr_dict = {}
     xattr_dict['parents'] = {}
 
