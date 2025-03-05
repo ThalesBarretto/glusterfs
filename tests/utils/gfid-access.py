@@ -134,7 +134,7 @@ if __name__ == '__main__':
         Xattr.lsetxattr(pargfid, 'glusterfs.gfid.newfile', blob)
     except OSError:
         ex = sys.exc_info()[1]
-        if not ex.errno in [EEXIST]:
+        if ex.errno not in [EEXIST]:
             raise
             sys.exit(-1)
     print("File creation OK")
