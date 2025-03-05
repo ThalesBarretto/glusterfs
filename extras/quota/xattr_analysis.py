@@ -36,7 +36,7 @@ def get_quota_xattr_brick():
             filename = k
             print("=====" + filename + "=======")
             xdict = {}
-        elif k is "":
+        elif k == "":
             pass
         else:
             print(xattr)
