@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # This will test healing of ctime xattr 'trusted.glusterfs.mdata' after add-brick and rebalance
 #
