@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ## The script tests the logging of the quota in the bricks after reaching soft
 ## limit of the configured limit.
