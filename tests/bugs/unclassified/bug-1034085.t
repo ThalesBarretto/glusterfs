@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #Test case: Check the creation of indices/xattrop dir as soon as brick comes up.
 
 . $(dirname $0)/../../include.rc
