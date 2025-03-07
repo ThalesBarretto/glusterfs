@@ -3,7 +3,7 @@
 set -u
 
 function reset() {
-    while pgrep gluster >/dev/null; do
+    while pgrep gluster >/dev/null ; do
         pkill -9 gluster
         sleep 0.1
     done
@@ -11,9 +11,9 @@ function reset() {
     findmnt -t fuse.glusterfs -o TARGET | tail -n +2 | xargs -r -n 1 umount
     mkdir -p /d/dev
     vgremove -fyS "vg_name=~_$(hostname -s)_"
-    for dev in $(ls /d/dev/ 2>/dev/null); do
-        losetup -d /d/dev/${dev}
-        rm -f /d/dev/${dev}
+    for dev in /d/dev/* ; do
+        losetup -d /d/dev/"${dev}"
+        rm -f /d/dev/"${dev}"
     done
 }
 
