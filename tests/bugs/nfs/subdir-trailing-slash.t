@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Verify that mounting a subdir over NFS works, even with a trailing /
 #
