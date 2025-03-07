@@ -1077,7 +1077,8 @@ main()
         # pacemaker 2.1.0 changed --timeout=value
         echo "${crmadmin_vers}"
     crmadmin_vers=$(crmadmin --version | grep -o "[12]\.[0-9]\.." | cut -c 1-3)
-        if [[ "${crmadmin_vers}" > "2.0" ]]; then
+    # bc returns 0=false, 1=true
+    if [[ 0 -ne $( echo "${crmadmin_vers} > 2.0" | bc ) ]]; then
             CRMADM_TIMEOUT_OPTION="5sec"
         fi
 
