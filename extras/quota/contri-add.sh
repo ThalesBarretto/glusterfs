@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script adds contributions of files/directories in backend to volume
 # size.
