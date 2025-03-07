@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #Tests that halo basic functionality works as expected
 
 . $(dirname $0)/../../include.rc
