@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This test case is for the bug where, even though a file is
 # created when gfid2path option is turned off (default is ON),
