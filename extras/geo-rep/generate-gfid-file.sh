@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #Usage: generate-gfid-file.sh <primary-volfile-server:primary-volume> <path-to-get-gfid.sh> <output-file> [dirs-list-file]
 
 function get_gfids()
