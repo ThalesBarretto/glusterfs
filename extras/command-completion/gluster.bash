@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 GLUSTER_TOP_SUBOPTIONS1="
         {nfs},
