@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #The post-upgrade script must be executed after all the nodes in the cluster
 #have upgraded.
