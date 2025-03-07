@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #Test that statfs is not served from the arbiter brick.
 
 . $(dirname $0)/../../include.rc
