@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #Test the split-brain resolution CLI commands.
 . $(dirname $0)/../../include.rc
