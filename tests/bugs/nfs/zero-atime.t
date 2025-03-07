@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # posix_do_utimes() sets atime and mtime to the values in the passed IATT. If
 # not set, these values are 0 and cause a atime/mtime set to the Epoch.
