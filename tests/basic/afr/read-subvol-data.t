@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #Test if the source is selected based on data transaction for a regular file.
 
 . $(dirname $0)/../../include.rc
