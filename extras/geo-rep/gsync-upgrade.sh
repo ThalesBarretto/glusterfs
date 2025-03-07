@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #usage: gsync-upgrade.sh <secondary-volfile-server:secondary-volume> <gfid-file>
 #                        <path-to-gsync-sync-gfid> <ssh-identity-file>
 #<secondary-volfile-server>: a machine on which gluster cli can fetch secondary volume info.
