@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Make sure this only gets included/executed once.  Unfortunately, bash doesn't
 # usually distinguish between values that are unset and values that are null.
