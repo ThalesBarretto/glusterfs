@@ -40,7 +40,7 @@ _init ()
     fi
 
     mounttab=/proc/mounts
-    uname_s=`uname -s`
+    uname_s=$(uname -s)
     case ${uname_s} in
         NetBSD)
             getinode="stat -f %i"
@@ -109,9 +109,9 @@ parse_volfile_servers ()
     local servers=""
     local new_servers=""
 
-    servers=$(echo ${server_list} | sed 's/,/ /g')
+    servers=$(echo "${server_list}" | sed 's/,/ /g')
     for server in ${servers}; do
-        is_valid_hostname ${server}
+        is_valid_hostname "${server}"
         if [ $? -eq 1 ]; then
             continue
         fi
@@ -124,7 +124,7 @@ parse_volfile_servers ()
 start_glusterfs ()
 {
     if [ -n "$log_level_str" ]; then
-        case "$( echo $log_level_str | awk '{print toupper($0)}')" in
+        case "$( echo "${log_level_str}" | awk '{print toupper($0)}')" in
             "ERROR")
                 log_level=$LOG_ERROR;
                 ;;
@@ -348,9 +348,9 @@ start_glusterfs ()
     if [ -z "$volfile_loc" ]; then
         if  [ -n "$server_ip" ]; then
 
-            servers=$(parse_volfile_servers ${server_ip});
+            servers=$(parse_volfile_servers "${server_ip}");
             if [ -n "$servers" ]; then
-                for i in $(echo ${servers}); do
+                for i in $(echo "${servers}"); do
                     cmd_line=$(echo "$cmd_line --volfile-server=$i");
                 done
             else
@@ -371,7 +371,7 @@ start_glusterfs ()
             fi
 
             if [ -n "$backup_volfile_servers" ]; then
-                backup_servers=$(parse_backup_volfile_servers ${backup_volfile_servers})
+                backup_servers=$(parse_backup_volfile_servers "${backup_volfile_servers}")
                 syntax_status=$(echo ${backup_servers##*' '})
                 if [ "$syntax_status" = "SyntaxError" ]; then
                     warn "ERROR: Invalid backup-volfile-servers specified.. exiting"
@@ -462,7 +462,7 @@ check_recursive_mount ()
     mnt_dir=${1%/};
 
     if [ -n "${getfattr}" ]; then
-        ${getfattr} -n trusted.gfid $mnt_dir 2>/dev/null | grep -iq "trusted.gfid=";
+        ${getfattr} -n trusted.gfid "${mnt_dir}" 2>/dev/null | grep -iq "trusted.gfid=";
         if [ $? -eq 0 ]; then
             warn "ERROR: $mnt_dir is in use as a brick of a gluster volume";
             exit 2;
@@ -477,14 +477,14 @@ check_recursive_mount ()
         return;
     fi
 
-    brick_path=`grep ^path "$GLUSTERD_WORKDIR"/vols/*/bricks/* 2>/dev/null | cut -d "=" -f 2`;
-    root_inode=`${lgetinode} /`;
-    root_dev=`${lgetdev} /`;
-    mnt_inode=`${lgetinode} $mnt_dir`;
-    mnt_dev=`${lgetdev} $mnt_dir`;
-    for brick in "$brick_path"; do
+    brick_path=$(grep ^path "$GLUSTERD_WORKDIR"/vols/*/bricks/* 2>/dev/null | cut -d "=" -f 2);
+    root_inode=$(${lgetinode} /);
+    root_dev=$(${lgetdev} /);
+    mnt_inode=$(${lgetinode} "${mnt_dir}");
+    mnt_dev=$(${lgetdev} "${mnt_dir}");
+    for brick in ${brick_path} ; do
         # evaluate brick path to see if this is local, if non-local, skip iteration
-        ls $brick > /dev/null 2>&1;
+        ls "${brick}" > /dev/null 2>&1;
         if [ $? -ne 0 ]; then
             continue;
         fi
@@ -493,18 +493,18 @@ check_recursive_mount ()
             ${getfattr} -n trusted.gfid "$brick" 2>/dev/null | grep -iq "trusted.gfid=";
             if [ $? -eq 0 ]; then
                 # brick is local
-                while [ 1 ]; do
+                while true ; do
                     tmp_brick="$brick";
                     brick="$brick"/..;
-                    brick_dev=`${lgetdev} $brick`;
-                    brick_inode=`${lgetinode} $brick`;
-                    if [ "$mnt_inode" -eq "$brick_inode" \
-                        -a "$mnt_dev" -eq "$brick_dev" ]; then
+                    brick_dev=$(${lgetdev} "${brick}");
+                    brick_inode=$(${lgetinode} "${brick}");
+                    if [ "$mnt_inode" -eq "${brick_inode}" ] \
+            && [ "$mnt_dev" -eq "${brick_dev}" ]; then
                         warn "ERROR: ${mnt_dir} is a parent of the brick ${tmp_brick}";
                         exit 2;
                     fi
-                    [ "$root_inode" -ne "$brick_inode" \
-                        -o "$root_dev" -ne "$brick_dev" ] || break;
+                    [ "$root_inode" -ne "$brick_inode" ] ||
+                        [ "$root_dev" -ne "$brick_dev" ] || break;
                 done;
             else
                 continue;
@@ -607,17 +607,17 @@ with_options()
             fuse_auto_invalidation=$value
             ;;
         "no-root-squash")
-            if [ $value = "yes" ] ||
-                [ $value = "on" ] ||
-                [ $value = "enable" ] ||
-                [ $value = "true" ] ; then
+            if [ "${value}" = "yes" ]    ||
+               [ "${value}" = "on" ]     ||
+               [ "${value}" = "enable" ] ||
+               [ "${value}" = "true" ] ; then
                 no_root_squash=1;
             fi ;;
         "root-squash")
-            if [ $value = "no" ] ||
-                [ $value = "off" ] ||
-                [ $value = "disable" ] ||
-                [ $value = "false" ] ; then
+            if [ "${value}" = "no" ]      ||
+               [ "${value}" = "off" ]     ||
+               [ "${value}" = "disable" ] ||
+               [ "${value}" = "false" ] ; then
                 no_root_squash=1;
             fi ;;
         "kernel-writeback-cache")
@@ -756,13 +756,13 @@ without_options()
 parse_options()
 {
     local optarg=${1}
-    for pair in $(echo ${optarg}|sed 's/,/ /g'); do
+    for pair in $(echo "${optarg}"|sed 's/,/ /g'); do
         key=$(echo "$pair" | cut -f1 -d'=');
         value=$(echo "$pair" | cut -f2- -d'=');
         if [ "$key" = "$value" ]; then
-            without_options $pair;
+            without_options "${pair}";
         else
-            with_options $key $value;
+            with_options "${key}" "${value}";
         fi
     done
 }
@@ -784,7 +784,7 @@ update_updatedb()
 
 main ()
 {
-    if [ "x${uname_s}" = "xLinux" -a $# -ge 2 ] ; then
+    if [ "x${uname_s}" = "xLinux" ] && [ $# -ge 2 ] ; then
         volfile_loc=$1
         mount_point=$2
 
@@ -795,7 +795,7 @@ main ()
         case "${opt}" in
             o)
                 parse_options ${OPTARG};
-		shift 2;
+        shift 2;
                 ;;
             n)
                 ;;
@@ -866,7 +866,7 @@ EOF
 
     # No need to do a ! -d test, it is taken care while initializing the
     # variable mount_point
-    [ -z "$mount_point" -o ! -d "$mount_point" ] && {
+    [ -z "$mount_point" ] || [ ! -d "$mount_point" ] && {
         cat <<EOF >&2
 ERROR: Mount point does not exist
 Please specify a mount point
