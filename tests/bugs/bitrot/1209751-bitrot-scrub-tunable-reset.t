@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ## Test case for bitrot
 ## On restarting glusterd should not reset bitrot tunable value to default
