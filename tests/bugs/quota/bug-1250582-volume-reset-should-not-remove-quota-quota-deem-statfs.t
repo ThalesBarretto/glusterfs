@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This test ensures that 'gluster volume reset' command do not remove
 # features.quota-deem-statfs, features.quota.
