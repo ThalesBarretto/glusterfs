@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 
 # This test checks if address validation, correctly catches hostnames
 # with consective dots, such as 'example..org', as invalid
