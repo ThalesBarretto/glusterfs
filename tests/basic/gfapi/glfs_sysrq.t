@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Run glfs_sysrq, a gfapi applications calling all glfs_sysrq() commands.
 # Each command generates a specific log message, or something else that can be
