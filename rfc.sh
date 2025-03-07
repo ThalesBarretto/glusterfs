@@ -1,5 +1,6 @@
-#!/bin/sh -e
-# Since we run with '#!/bin/sh -e'
+#!/usr/bin/env bash
+set -e
+set -o pipefail
 #   '$? != 0' will force an exit,
 # i.e. where we are interested in the result of a command,
 # we have to run the command in an if-statement.
