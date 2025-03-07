@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # When nfs.mount-rmtab is disabled, it should not get updated.
 #
