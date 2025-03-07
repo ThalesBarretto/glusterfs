@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # sample unresolved backtrace lines picked up from a brick log that should go
 # into a backtrace file eg. bt-file.txt:
 # /usr/lib64/glusterfs/3.8.4/xlator/cluster/replicate.so(+0x3ec81)[0x7fe4bc271c81]
