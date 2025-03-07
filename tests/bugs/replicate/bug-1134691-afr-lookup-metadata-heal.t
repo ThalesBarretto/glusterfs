@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #### Test iatt and user xattr heal from lookup code path ####
 
 . $(dirname $0)/../../include.rc
