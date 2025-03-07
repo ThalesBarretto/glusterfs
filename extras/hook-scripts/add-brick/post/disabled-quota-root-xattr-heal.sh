@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ##---------------------------------------------------------------------------
 ## This script updates the 'limit-set' xattr on the newly added node. Please
