@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Install to hooks/<HOOKS_VER>/add-brick/post
 #
