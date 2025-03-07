@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #Post reboot there is a chance in which mounting of shared storage will fail
 #This will impact starting of features like NFS-Ganesha. So this script will
 #try to mount the shared storage if it fails
