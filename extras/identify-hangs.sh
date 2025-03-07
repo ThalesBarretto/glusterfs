@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 function get_statedump_fnames_without_timestamps
 {
     ls | grep -E "[.]dump[.][0-9][0-9]*" | cut -f1-3 -d'.' | sort -u
