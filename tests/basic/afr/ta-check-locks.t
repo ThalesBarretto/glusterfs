@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #This test checks if all the locks on
 #ta file are being held and released properly
 
