@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #Create gfid split-brain of directory and check if conservative merge
 #completes successfully.
