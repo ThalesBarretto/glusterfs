@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #Test the client side split-brain resolution
 . $(dirname $0)/../../include.rc
