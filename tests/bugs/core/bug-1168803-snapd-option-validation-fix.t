@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ## Test case for BZ-1168803 - snapd option validation should not fail if the
 #snapd is not running
