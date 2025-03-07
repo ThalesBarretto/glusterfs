@@ -130,8 +130,8 @@ function main()
 
 base="$(realpath "${1}")"
 cd "${base}"
-find -name "*.o" |
-    while read path; do
+find . -name "*.o" |
+    while read -r path; do
         if ! main "${path}"; then
             touch ./.symbol-check-errors
         fi
