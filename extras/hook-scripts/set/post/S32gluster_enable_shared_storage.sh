@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 key=`echo $3 | cut -d '=' -f 1`
 val=`echo $3 | cut -d '=' -f 2`
