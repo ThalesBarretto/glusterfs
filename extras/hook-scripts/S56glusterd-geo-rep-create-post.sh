@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #key_val_pair is the arguments passed to the script in the form of
 #key value pair
