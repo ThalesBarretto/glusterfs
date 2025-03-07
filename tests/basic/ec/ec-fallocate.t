@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Run several commands to verify basic fallocate functionality. We verify that
 # fallocate creates and allocates blocks to a file. We also verify that the keep
