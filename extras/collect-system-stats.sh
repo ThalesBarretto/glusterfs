@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 ################################################################################
 # Usage: collect-system-stats.sh <delay-in-seconds>
 # This script starts sar/top/iostat/vmstat processes which collect system stats
