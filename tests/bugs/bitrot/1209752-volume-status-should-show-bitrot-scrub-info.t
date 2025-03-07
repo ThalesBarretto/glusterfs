@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ## Test case for bitrot
 ## gluster volume status command should show status of bitrot daemon
