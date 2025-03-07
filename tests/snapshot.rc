@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 LVM_DEFINED=0
 # Replace any '-' by '_' to avoid that device manager modifies the name of
