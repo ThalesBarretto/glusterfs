@@ -1,7 +1,6 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # Each entry in the array below is a regular expression to match stale keys
-
 xs=("trusted.glusterfs.createtime"
     "trusted.glusterfs.version"
     "trusted.glusterfs.afr.data-pending"
@@ -10,10 +9,12 @@ xs=("trusted.glusterfs.createtime"
     
 absolute_path()
 {
-    local dir=$(dirname "$1");
-    local base=$(basename "$1");
+    local dir
+    local base
+    dir=$(dirname "$1");
+    base=$(basename "$1");
     cd "$dir";
-    echo $(pwd)/"$base";
+    echo "$(pwd)/$base";
     cd - >/dev/null;
 }
 
@@ -23,9 +24,9 @@ cleanup()
     sanitizee=$(absolute_path "$1");
 
     stale_keys=$(
-        for pattern in ${xs[@]}; do
+        for pattern in "${xs[@]}"; do
             getfattr -d -m "$pattern" "$sanitizee" 2>/dev/null |
-            grep = | cut -f1 -d=;
+            grep -e '=' | cut -f1 -d '=';
         done
         )
 
@@ -45,7 +46,7 @@ crawl()
     this_script=$(absolute_path "$0");
 
     export sanitize=yes;
-    find "$1" -exec "$this_script" {} \;
+    find "$1" \( -exec "$this_script" {} \; \)
 }
 
 
