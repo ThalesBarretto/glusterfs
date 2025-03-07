@@ -20,7 +20,7 @@
 # Usage with source install:
 # print-packtrace.sh none bt-file.txt
 
-function version_compare() { test $(echo $1|awk -F '.' '{print $1 $2 $3}') -gt $(echo $2|awk -F '.' '{print $1 $2 $3}'); }
+function version_compare() { test "$(echo "$1"|awk -F '.' '{print $1 $2 $3}')" -gt "$(echo "$2"|awk -F '.' '{print $1 $2 $3}')"; }
 
 function Usage()
 {
@@ -35,25 +35,25 @@ function Usage()
 debuginfo_rpm=$1
 backtrace_file=$2
 
-if [ ! $debuginfo_rpm ] || [ ! $backtrace_file ]; then
+if [ ! "$debuginfo_rpm" ] || [ ! "$backtrace_file" ]; then
         Usage
         exit 1
 fi
 
-if [ $debuginfo_rpm != "none" ]; then
-        if [ ! -f $debuginfo_rpm ]; then
+if [ "$debuginfo_rpm" != "none" ]; then
+        if [ ! -f "$debuginfo_rpm" ]; then
                 echo "no such rpm file: $debuginfo_rpm"
                 exit 1
         fi
 fi
 
-if [ ! -f $backtrace_file ]; then
+if [ ! -f "$backtrace_file" ]; then
         echo "no such backtrace file: $backtrace_file"
         exit 1
 fi
 
 if [ "$debuginfo_rpm" != "none" ]; then
-        if ! file $debuginfo_rpm | grep RPM >/dev/null 2>&1 ; then
+        if ! file "$debuginfo_rpm" | grep RPM >/dev/null 2>&1 ; then
                 echo "file does not look like an rpm: $debuginfo_rpm"
                 exit 1
         fi
@@ -64,28 +64,28 @@ rpm_name=""
 debuginfo_path=""
 debuginfo_extension=""
 
-if [ $debuginfo_rpm != "none" ]; then
+if [ "$debuginfo_rpm" != "none" ]; then
         # extract the gluster debuginfo rpm to resolve the symbols against
-        rpm_name=$(basename $debuginfo_rpm '.rpm')
-        if [ -d $rpm_name ]; then
+        rpm_name=$(basename "$debuginfo_rpm" '.rpm')
+        if [ -d "$rpm_name" ]; then
                 echo "directory already exists: $rpm_name"
                 echo "please remove/move it and reattempt"
                 exit 1
         fi
-        mkdir -p $rpm_name
-        if version_compare $cpio_version "2.11"; then
-                rpm2cpio $debuginfo_rpm | cpio --quiet --extract --make-directories --preserve-modification-time --directory=$rpm_name
+        mkdir -p "$rpm_name"
+        if version_compare "$cpio_version" "2.11"; then
+                rpm2cpio "$debuginfo_rpm" | cpio --quiet --extract --make-directories --preserve-modification-time --directory=$rpm_name
                 ret=$?
         else
                 current_dir="$PWD"
-                cd $rpm_name
-                rpm2cpio $debuginfo_rpm | cpio --quiet --extract --make-directories --preserve-modification-time
+                cd "$rpm_name"
+                rpm2cpio "$debuginfo_rpm" | cpio --quiet --extract --make-directories --preserve-modification-time
                 ret=$?
-                cd $current_dir
+                cd "$current_dir"
         fi
         if [ $ret -eq 1 ]; then
                 echo "failed to extract rpm $debuginfo_rpm to $PWD/$rpm_name directory"
-                rm -rf $rpm_name
+                rm -rf "$rpm_name"
                 exit 1
         fi
         debuginfo_path="$PWD/$rpm_name/usr/lib/debug"
@@ -96,20 +96,20 @@ else
 fi
 
 # NOTE: backtrace file should contain only the lines which need to be resolved
-for bt in $(cat $backtrace_file)
+while read -r bt
 do
-        libname=$(echo $bt | cut -f 1 -d '(')
-        addr=$(echo $bt | cut -f 2 -d '(' | cut -f 1 -d ')')
+        libname=$(echo "$bt" | cut -f 1 -d '(')
+        addr=$(echo "$bt" | cut -f 2 -d '(' | cut -f 1 -d ')')
         libpath=${debuginfo_path}${libname}${debuginfo_extension}
-        if [ ! -f $libpath ]; then
+        if [ ! -f "$libpath" ]; then
                 continue
         fi
-        newbt=( $(eu-addr2line --functions --exe=$libpath $addr) )
+        newbt=( $(eu-addr2line --functions --exe="$libpath" "$addr") )
         echo "$bt ${newbt[*]}"
-done
+done <"$backtrace_file" 
 
 # remove the temporary directory
-if [ -d $rpm_name ]; then
-        rm -rf $rpm_name
+if [ -d "$rpm_name" ]; then
+        rm -rf "$rpm_name"
 fi
 
