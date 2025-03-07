@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #This file tests that heal succeeds even when quota is exceeded
 
