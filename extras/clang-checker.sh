@@ -99,22 +99,22 @@ function run_scanbuild () {
     local CLANG=$(which clang)
     local SCAN_BUILD=$(which scan-build)
     local ORIG_COMMIT=$(git rev-parse --verify HEAD^)
-    PATCH_NAME=$(git format-patch $ORIG_COMMIT)
+    PATCH_NAME=$(git format-patch "${ORIG_COMMIT}")
 
     echo -e "\n| Performing clang analysis on:" \
             "$(git log --pretty=format:"%h - '%s' by %an" -1) ... |\n"
-    echo -e "Changes are identified in '${FILES[@]}' directorie[s]\n"
+    echo -e "Changes are identified in '${FILES[*]}' directorie[s]\n"
 
     if [ -d "${BRESULTS_DIR}" ]; then
         mkdir -p "${BBACKUP_DIR}" "${TBACKUP_DIR}"
         mv "${BRESULTS_DIR}" \
-           "${BBACKUP_DIR}/results_$(ls -l ${BBACKUP_DIR} | wc -l)"
+           "${BBACKUP_DIR}/results_$(ls -l "${BBACKUP_DIR}" | wc -l)"
         mv "${TRESULTS_DIR}" \
-           "${TBACKUP_DIR}/results_$(ls -l ${TBACKUP_DIR} | wc -l)"
+           "${TBACKUP_DIR}/results_$(ls -l "${TBACKUP_DIR}" | wc -l)"
     fi
-    for DIR in ${FILES[@]}; do
-        mkdir -p "${BRESULTS_DIR}/$(echo ${DIR} | sed 's/\//_/g')"
-        mkdir -p "${TRESULTS_DIR}/$(echo ${DIR} | sed 's/\//_/g')"
+    for DIR in "${FILES[@]}" ; do
+        mkdir -p "${BRESULTS_DIR}/$(echo "${DIR}" | sed 's/\//_/g')"
+        mkdir -p "${TRESULTS_DIR}/$(echo "${DIR}" | sed 's/\//_/g')"
     done
     # get nproc info
     case $(uname -s) in
