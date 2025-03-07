@@ -74,7 +74,7 @@ set_brick_labels()
 
   # Add a file context for each brick path in the list and associate with the
   # glusterd_brick_t SELinux type.
-  for p in ${list[@]}
+  for p in "${list[@]}"
   do
     semanage fcontext --add -t glusterd_brick_t -r s0 "${p}"
   done
