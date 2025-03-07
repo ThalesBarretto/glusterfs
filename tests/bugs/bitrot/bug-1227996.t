@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ## Test case for bitrot
 ## Tunable object signing waiting time value for bitrot.
