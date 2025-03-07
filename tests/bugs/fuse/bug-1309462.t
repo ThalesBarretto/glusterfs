@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # https://bugzilla.redhat.com/show_bug.cgi?id=1309462
 # Test the new fuse mount option --capability.
