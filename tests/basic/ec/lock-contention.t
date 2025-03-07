@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This test verifies that when 'lock-notify-contention' option is enabled,
 # locks xlator actually sends an upcall notification that causes the acquired
