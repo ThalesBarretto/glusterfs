@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 CLUSTER_PFX="127.1.1"; # ".x" for each glusterd
 CLUSTER_COUNT=1; # Just initial definition
