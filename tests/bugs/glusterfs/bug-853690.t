@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Bug 853690 - Test that short writes do not lead to corruption.
 #
