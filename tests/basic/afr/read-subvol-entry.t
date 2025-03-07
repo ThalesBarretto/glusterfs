@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #Test if the read child is selected based on entry transaction for directory
 
 . $(dirname $0)/../../include.rc
