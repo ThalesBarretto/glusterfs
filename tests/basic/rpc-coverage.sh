@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script can be used to provoke 35 fops (if afr is used),
 # 28 fops (if afr is not used) (-fstat,-readdirp, and lk,xattrop calls)
