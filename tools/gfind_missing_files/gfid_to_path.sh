@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bun/env bash
 
 ## Copyright (c) 2015 Red Hat, Inc. <http://www.redhat.com/>
 ## This file is part of GlusterFS.
