@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Use this script to identify the command and line-number of test-cases.
 #
