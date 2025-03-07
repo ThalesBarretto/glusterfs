@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 function create_brick_xattrop_entry {
         local xattrop_dir=$(afr_get_index_path $1)
