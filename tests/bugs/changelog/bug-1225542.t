@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #Testcase:
 #On snapshot, notify changelog reconfigure upon explicit rollover
