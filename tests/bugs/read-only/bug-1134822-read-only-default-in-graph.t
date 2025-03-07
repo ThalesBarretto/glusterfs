@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #Test case: This test checks when a volume is made read-only though volume set
 #           and bricks are not restarted no write operations can be performed on
