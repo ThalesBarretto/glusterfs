@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Test that setting cluster.dht-xattr-name works, and that DHT consistently
 # uses the specified name instead of the default.
