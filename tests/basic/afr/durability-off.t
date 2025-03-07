@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #This test tests that self-heals don't perform fsync when durability is turned
 #off
 
