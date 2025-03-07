@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 #
 # This script is intentionally left empty. Distributions that package GlusterFS
 # may want to to replace it with an updated copy from the automake project.
