@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Test details:
 # This is to test that the io-stat-dump xattr is not set on the brick,
