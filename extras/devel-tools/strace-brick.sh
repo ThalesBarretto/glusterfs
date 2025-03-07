@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Usage:
 # nice -n -19 strace-brick.sh glusterfsd 50
 
