@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Need to be copied to hooks/<HOOKS_VER>/set/post/
 
