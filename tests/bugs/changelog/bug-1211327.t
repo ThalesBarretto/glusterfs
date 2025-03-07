@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #Testcase:
 #On brick restart, new HTIME.TSTAMP file should not be created.
