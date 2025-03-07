@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # This will test self healing of ctime xattr 'trusted.glusterfs.mdata'
 #
