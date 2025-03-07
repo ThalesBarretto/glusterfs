@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #  Copyright (c) 2018-2019 Red Hat, Inc. <http://www.redhat.com>
 #  This file is part of GlusterFS.
 #
