@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Verify that mounting NFS over UDP (MOUNT service only) works.
 #
