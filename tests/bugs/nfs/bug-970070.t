@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # TEST the nfs.acl option
 . $(dirname $0)/../../include.rc
 
