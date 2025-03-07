@@ -16,7 +16,7 @@ while [ ! -e start-test ]; do
 done;
 
 
-for i in $(seq 1 5); do 
+for (( i = 1 ; i <= 5 ; i = i + 1 )); do 
     # write
     dd if="${ifilename}" of="${ofilename}" bs="${blocksize}" count="${count}" 2>&1 | tail -n 1 | cut -f 8,9 -d ' ' >> "${result}" ;
     # read
