@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Test read transaction inode refresh logic for thin-arbiter.
 
