@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Try loading the config from any of the distro
 # specific configuration locations
