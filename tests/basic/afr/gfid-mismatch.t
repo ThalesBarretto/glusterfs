@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #Test that GFID mismatches result in EIO
 
 . $(dirname $0)/../../include.rc
