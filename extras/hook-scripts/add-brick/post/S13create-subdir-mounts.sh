@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ##---------------------------------------------------------------------------
 ## This script runs the self-heal of the directories which are expected to
