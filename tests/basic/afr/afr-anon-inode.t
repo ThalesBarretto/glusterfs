@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #Tests that afr-anon-inode test cases work fine as expected
 #These are cases where in entry-heal/name-heal we dont know entry for an inode
 #so these inodes are kept in a special directory
