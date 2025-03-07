@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # The nfs.rpc-auth-allow volume option is used to generate the list of clients
 # that are displayed as able to mount the export. The "group" in the export
