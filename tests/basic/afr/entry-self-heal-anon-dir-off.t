@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #This file checks if missing entry self-heal and entry self-heal are working
 #as expected.
