@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ZFS_DEFINED=0
 # Replace any '-' by '_' to avoid that device manager modifies the name of
