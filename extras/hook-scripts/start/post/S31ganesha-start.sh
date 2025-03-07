@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 PROGNAME="Sganesha-start"
 OPTSPEC="volname:,gd-workdir:,version:,volume-op:,first:"
 VOL=
