@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ## Test case for bitrot
 ## bitd daemon should not start on the node which dont have any brick
