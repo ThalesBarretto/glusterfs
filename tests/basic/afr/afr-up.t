@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #Tests that afr up/down works as expected
 
 . $(dirname $0)/../../include.rc
