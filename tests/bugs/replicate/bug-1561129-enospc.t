@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #Tests that sequential write workload doesn't lead to FSYNCs
 
 . $(dirname $0)/../../include.rc
