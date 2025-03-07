@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #This file checks if self-heal of files with holes is working properly or not
 #bigger is 2M, big is 1M, small is anything less
