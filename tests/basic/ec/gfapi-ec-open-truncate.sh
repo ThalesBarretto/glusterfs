@@ -42,7 +42,7 @@ TEST build_tester "$(dirname "${0}")"/gfapi-ec-open-truncate.c -lgfapi
 TEST "${CLI}" volume profile "${V0}" info clear
 TEST ./"$(dirname "${0}")"/gfapi-ec-open-truncate "${H0}" "${V0}" "${logdir}"/gfapi-ec-open-truncate.log
 
-EXPECT "^2$" echo "$("${CLI}" volume profile "${V0}" info incremental | grep -i truncate | wc -l)"
+EXPECT "^2$" echo "$("${CLI}" volume profile "${V0}" info incremental | grep -c -i truncate)"
 cleanup_tester "$(dirname "${0}")"/gfapi-ec-open-truncate
 
 cleanup
