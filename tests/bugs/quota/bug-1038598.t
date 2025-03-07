@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 .  $(dirname $0)/../../include.rc
 .  $(dirname $0)/../../volume.rc
 
