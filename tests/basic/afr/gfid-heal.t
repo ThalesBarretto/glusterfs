@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #gfid self-heal test on distributed replica. Make sure all the gfids are same
 #and the gfid exists on all the bricks
 
