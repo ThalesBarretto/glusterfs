@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ## Test case for bitrot.
 ## volume info should not show 'features.scrub: resume' if scrub process is
