@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Script to verify the Primary and Secondary Gluster compatibility.
 # To use ./gverify <primary volume> <secondary user> <secondary host> <secondary volume> <ssh port> <log file>
