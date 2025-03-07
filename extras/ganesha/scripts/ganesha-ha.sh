@@ -283,13 +283,13 @@ refresh_config ()
         local HA_CONFDIR=${2}
         local short_host=$(hostname -s)
 
-        local export_id=$(grep ^[[:space:]]*Export_Id "${HA_CONFDIR}/exports/export.${VOL}.conf" |\
-                          awk -F"[=,;]" '{print $2}' | tr -d '[[:space:]]')
+        local export_id=$(grep -E '^[[:space:]]*Export_Id' "${HA_CONFDIR}/exports/export.${VOL}.conf" |\
+                          awk -F"[=,;]" '{print $2}' | tr -d '[:space:]')
 
 
         if [ -e ${SECRET_PEM} ]; then
         while [[ ${3} ]]; do
-            current_host=`echo ${3} | cut -d "." -f 1`
+        current_host=$(echo "${3}" | cut -d "." -f 1)
             if [[ ${short_host} != "${current_host}" ]]; then
                 output=$(ssh -oPasswordAuthentication=no \
 -oStrictHostKeyChecking=no -i "${SECRET_PEM}" root@"${current_host}" \
