@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This regression test tries to ensure renaming a directory with content, and
 # no limit set, is accounted properly, when moved into a directory with quota
