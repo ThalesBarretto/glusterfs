@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # glustereventsd   Startup script for the glusterfs Events server
 #
