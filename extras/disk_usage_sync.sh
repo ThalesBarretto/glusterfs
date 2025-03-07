@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/bash
 
 # This script can be used to sync disk usage before activating quotas on GlusterFS.
 # There are two scenarios where quotas are used and this script has to be used accordingly - 
