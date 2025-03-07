@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Test basic readdir-ahead functionality. Verify that readdir-ahead can be
 # enabled, create a set of files and run some ls tests.
