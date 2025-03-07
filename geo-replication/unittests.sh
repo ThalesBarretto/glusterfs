@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 cd $(dirname $0)/tests/unit
 nosetests -v --exe --with-coverage --cover-package \
