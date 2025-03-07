@@ -8,7 +8,7 @@ set -o pipefail
 UPSTREAM=${GLUSTER_UPSTREAM}
 if [ "x$UPSTREAM" = "x" ]; then
     for rmt in $(git remote); do
-	rmt_repo=$(LANGUAGE=en_US.UTF-8 git remote show $rmt -n | grep Fetch | awk '{ print $3 }');
+	rmt_repo=$(LANGUAGE=en_US.UTF-8 git remote show "${rmt}" -n | grep Fetch | awk '{ print $3 }');
 	if [ "${rmt_repo%.git}" = "git@github.com:gluster/glusterfs" ]; then
 	    UPSTREAM=$rmt
 	    echo "Picked ${UPSTREAM} as upstream remote"
@@ -26,8 +26,8 @@ fi
 USER_REPO=${GLUSTER_USER_REPO:-origin}
 if [ "x${USER_REPO}" = "x${UPSTREAM}" ] ; then
     echo "When you submit patches, it should get submitted to your fork, not to upstream directly"
-    echo "If you are not sure, check `for rmt in $(git remote); do git remote show $rmt -n; done`"
-    echo "And pick the correct remote you would like to push to and do `export GLUSTER_USER_REPO=$rmt`"
+    echo "If you are not sure, check $(for rmt in $(git remote); do git remote show "${rmt}" -n; done)"
+    echo "And pick the correct remote you would like to push to and do $(export GLUSTER_USER_REPO=${rmt})"
     echo ""
     echo "Exiting..."
     exit 1
@@ -40,7 +40,7 @@ while getopts "vf" opt; do
     case $opt in
         v)
             # Verbose mode
-            git () { >&2 echo "git $@" && `which git` $@; }
+	    git () { >&2 echo "git $*" && $(which git) "$*"; }
             ;;
         f)
             # Use force to git push
@@ -63,9 +63,9 @@ set_hooks_commit_msg()
         return;
     fi
 
-    curl -L -o $f $u || wget -O $f $u;
+    curl -L -o "${f}" "${u}" || wget -O "${f}" "${u}";
 
-    chmod +x $f
+    chmod +x "${f}"
 
     # Let the 'Change-Id: ' header get assigned on first run of rfc.sh
     GIT_EDITOR=true git commit --amend;
@@ -122,7 +122,7 @@ check_backport()
     else
         # Search 'devel' for the same change ID (rebase_changes has run, so we
         # should never not find a Change-Id)
-        mchangeid=$(git log ${UPSTREAM}/devel --format='%b' --grep="^Change-Id: ${changeid}" | grep ${changeid} | awk '{print $2}')
+        mchangeid=$(git log "${UPSTREAM}/devel" --format='%b' --grep="^Change-Id: ${changeid}" | grep "${changeid}" | awk '{print $2}')
 
         # Check if we found the change ID on 'devel', else throw a message to
         # decide if we should continue.
@@ -230,8 +230,8 @@ editor_mode()
                 fixes_string="Updates"
             fi
 
-            sed "/^Change-Id:/{p; s/^.*$/${fixes_string}: #${issue}/;}" $1 > $1.new && \
-                mv $1.new $1;
+            sed "/^Change-Id:/{p; s/^.*$/${fixes_string}: #${issue}/;}" "$1" > "$1.new" && \
+                mv "$1.new" "$1" ;
             return;
         done
     fi
@@ -246,7 +246,7 @@ EOF
 
 assert_diverge()
 {
-    git diff $UPSTREAM/$branch..HEAD | grep -q .;
+    git diff "$UPSTREAM/$branch"..HEAD | grep -q .;
 }
 
 
@@ -292,7 +292,7 @@ main()
         return;
     fi
 
-    git fetch $UPSTREAM;
+    git fetch "$UPSTREAM";
 
     rebase_changes;
 
@@ -311,13 +311,13 @@ main()
 
     # TODO: add clang-format command here. It will after the changes are done everywhere else
     clang_format=$(clang-format --version)
-    if [ ! -z "${clang_format}" ]; then
+    if [ -n "${clang_format}" ]; then
         # Considering git show may not give any files as output matching the
         # criteria, good to tell script not to fail on error
         set +e
         list_of_files=$(git show --pretty="format:" --name-only |
                             grep -v "contrib/" | egrep --color=never "*\.[ch]$");
-        if [ ! -z "${list_of_files}" ]; then
+        if [ -n "${list_of_files}" ]; then
             echo "${list_of_files}" | xargs clang-format -i
         fi
         set -e
@@ -333,9 +333,9 @@ main()
     fi
 
     if [ -z "${reference}" ]; then
-        $drier git push $USER_REPO HEAD:temp_${branch}/$(date +%Y-%m-%d_%s) $FORCE;
+        $drier git push "${USER_REPO}" HEAD:"temp_${branch}/$(date +%Y-%m-%d_%s)" "${FORCE}";
     else
-        $drier git push $USER_REPO HEAD:issue${reference}_${branch} $FORCE;
+        $drier git push "${USER_REPO}" HEAD:"issue${reference}_${branch}" "${FORCE}";
     fi
 }
 
