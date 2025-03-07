@@ -70,4 +70,4 @@ main ()
     done
 }
 
-main $@
+main "$@"
