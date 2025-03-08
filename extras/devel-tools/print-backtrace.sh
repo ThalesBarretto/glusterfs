@@ -35,7 +35,7 @@ function Usage()
 debuginfo_rpm=$1
 backtrace_file=$2
 
-if [ ! "$debuginfo_rpm" ] || [ ! "$backtrace_file" ]; then
+if [ -z "$debuginfo_rpm" ] || [ -z "$backtrace_file" ]; then
         Usage
         exit 1
 fi
@@ -104,7 +104,7 @@ do
         if [ ! -f "$libpath" ]; then
                 continue
         fi
-        newbt=( $(eu-addr2line --functions --exe="$libpath" "$addr") )
+	mapfile -t newbt < <(eu-addr2line --functions --exe="$libpath" "$addr")
         echo "$bt ${newbt[*]}"
 done <"$backtrace_file" 
 
