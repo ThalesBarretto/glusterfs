@@ -4,11 +4,11 @@
 
 brick_process_name=$1
 min_watch_cpu=$2
-if [ ! $brick_process_name ]; then
+if [ -z "$brick_process_name" ]; then
         brick_process_name=glusterfsd
 fi
 
-if [ ! $min_watch_cpu ]; then
+if [ -z "$min_watch_cpu" ]; then
         min_watch_cpu=50
 fi
 
@@ -18,13 +18,13 @@ break=false
 
 while ! $break;
 do
-        mypids=( $(pgrep $brick_process_name) )
+        mapfile -t mypids < <(pgrep "$brick_process_name")
         echo "mypids: ${mypids[*]}"
 
-        pid_args=$(echo ${mypids[*]} | sed -e 's/ / -p /g;s/^/-p /')
+        pid_args=$(echo "${mypids[*]}" | sed -e 's/ / -p /g;s/^/-p /')
         echo "pid_args: $pid_args"
 
-        pcpu=( $(ps $pid_args -o pcpu -h ) )
+        mapfile -t pcpu < <(ps "$pid_args" -o pcpu -h )
         echo "pcpu: ${pcpu[*]}"
 
         wait_longer=false
@@ -34,16 +34,19 @@ do
                 echo "i: $i"
                 echo "mypids[$i]: ${mypids[$i]}"
 
-                int_pcpu=$(echo ${pcpu[$i]} | cut -f 1 -d '.')
+                int_pcpu="$(echo "${pcpu[$i]}" | cut -f 1 -d '.')"
                 echo "int_pcpu: $int_pcpu"
-                if [ ! $int_pcpu ] || [ ! $min_watch_cpu ]; then
+                if [ -z "$int_pcpu" ] || [ -z "$min_watch_cpu" ]; then
                         break=true
                         echo "breaking"
                 fi
-                if [ $int_pcpu -ge $min_watch_cpu ]; then
+                if [ "$int_pcpu" -ge "$min_watch_cpu" ]; then
                         wait_longer=true
                         mydirname="${brick_process_name}-${mypids[$i]}-$(date --utc +'%Y%m%d-%H%M%S.%N')"
-                        $(mkdir $mydirname && cd $mydirname && timeout --kill-after=5 --signal=KILL 60 nice -n -19 strace -p ${mypids[$i]} -ff -tt -T -o $brick_process_name) &
+                        $(mkdir "$mydirname" \
+                          && cd "$mydirname" \
+                          && timeout --kill-after=5 --signal=KILL 60 nice -n -19 \
+                             strace -p "${mypids[$i]}" -ff -tt -T -o "$brick_process_name") &
                 fi
         done
 
