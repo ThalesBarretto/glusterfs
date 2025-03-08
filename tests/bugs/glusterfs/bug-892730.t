@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Bug 892730 - Verify that afr handles EIO errors from the brick properly.
 #

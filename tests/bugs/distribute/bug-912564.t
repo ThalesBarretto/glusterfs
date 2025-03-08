@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Test that the rsync and "extra" regexes cause rename-in-place without
 # creating linkfiles, when they're supposed to.  Without the regex we'd have a

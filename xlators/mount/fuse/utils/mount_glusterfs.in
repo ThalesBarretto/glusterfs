@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # (C) 2014 Red Hat Inc. <http://www.redhat.com>
 # (C) 2015 ungleich GmbH <http://www.ungleich.ch>
 #

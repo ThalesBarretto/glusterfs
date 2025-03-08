@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 logdir=$(gluster --print-logdir)
 BRICK_LOGFILES="$logdir/bricks/d-backends-brick?.log"
 rm -f $BRICK_LOGFILES &> /dev/null

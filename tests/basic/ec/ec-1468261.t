@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # This test case verifies handling node down scenario with optimistic
 # changelog enabled on EC volume.

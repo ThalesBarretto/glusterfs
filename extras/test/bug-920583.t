@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ##Copy this file to tests/bugs before running run.sh (cp extras/test/bug-920583.t tests/bugs/)
 

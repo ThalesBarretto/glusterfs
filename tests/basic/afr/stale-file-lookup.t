@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #This file checks if stale file lookup fails or not.
 #A file is deleted when a brick was down. Before self-heal could happen to it

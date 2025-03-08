@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script checks whether the contribution and disk-usage of a file is same.
 

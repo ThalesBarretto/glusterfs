@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #
 # https://bugzilla.redhat.com/show_bug.cgi?id=1283103

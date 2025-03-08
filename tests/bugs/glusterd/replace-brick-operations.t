@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ## Test case for BZ: 1094119  Remove replace-brick support from gluster
 

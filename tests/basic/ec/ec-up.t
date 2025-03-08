@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #Tests that ec subvolume is up/down correctly
 
 . $(dirname $0)/../../include.rc

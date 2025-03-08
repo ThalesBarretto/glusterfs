@@ -1,5 +1,6 @@
-#!/bin/sh -e
-# Since we run with '#!/bin/sh -e'
+#!/usr/bin/env bash
+set -e
+set -o pipefail
 #   '$? != 0' will force an exit,
 # i.e. where we are interested in the result of a command,
 # we have to run the command in an if-statement.
@@ -25,8 +26,8 @@ fi
 USER_REPO=${GLUSTER_USER_REPO:-origin}
 if [ "x${USER_REPO}" = "x${UPSTREAM}" ] ; then
     echo "When you submit patches, it should get submitted to your fork, not to upstream directly"
-    echo "If you are not sure, check `for rmt in $(git remote); do git remote show $rmt -n; done`"
-    echo "And pick the correct remote you would like to push to and do `export GLUSTER_USER_REPO=$rmt`"
+    echo "If you are not sure, check $(for rmt in $(git remote); do git remote show "${rmt}" -n; done)"
+    echo "And pick the correct remote you would like to push to and do $(export GLUSTER_USER_REPO="${rmt}")"
     echo ""
     echo "Exiting..."
     exit 1
@@ -39,7 +40,7 @@ while getopts "vf" opt; do
     case $opt in
         v)
             # Verbose mode
-            git () { >&2 echo "git $@" && `which git` $@; }
+	    git () { >&2 echo "git $*" && $(which git) "$@"; }
             ;;
         f)
             # Use force to git push
@@ -77,7 +78,7 @@ is_num()
 
     num="$1";
 
-    [ -z "$(echo $num | sed -e 's/[0-9]//g')" ]
+    [ -z "$(echo "${num}" | sed -e 's/[0-9]//g')" ]
 }
 
 backport_id_message()
@@ -117,11 +118,11 @@ check_backport()
     if [ -z "$changeid" ]; then
         backport_id_message;
         echo -n "Did not find a Change-Id for a possible backport. Continue (y/N): "
-        read moveon
+        read -r moveon
     else
         # Search 'devel' for the same change ID (rebase_changes has run, so we
         # should never not find a Change-Id)
-        mchangeid=$(git log ${UPSTREAM}/devel --format='%b' --grep="^Change-Id: ${changeid}" | grep ${changeid} | awk '{print $2}')
+        mchangeid=$(git log "${UPSTREAM}"/devel --format='%b' --grep="^Change-Id: ${changeid}" | grep "${changeid}" | awk '{print $2}')
 
         # Check if we found the change ID on 'devel', else throw a message to
         # decide if we should continue.
@@ -135,7 +136,7 @@ check_backport()
             echo "Change-Id of commit: $changeid"
             echo "Change-Id on devel: $mchangeid"
             echo -n "Did not find mentioned Change-Id on 'devel' for a possible backport. Continue (y/N): "
-            read moveon
+            read -r moveon
         fi
     fi
 
@@ -149,7 +150,7 @@ check_backport()
 
 rebase_changes()
 {
-    GIT_EDITOR=$0 git rebase -i $UPSTREAM/$branch;
+    GIT_EDITOR=$0 git rebase -i "${UPSTREAM}/${branch}";
 }
 
 
@@ -196,12 +197,12 @@ REFRE="^[[:space:]]*(Fixes|Updates)(:)?[[:space:]]+#[[:digit:]]+"
 
 editor_mode()
 {
-    if [ $(basename "$1") = "git-rebase-todo" ]; then
-        sed 's/^pick /reword /g' "$1" > $1.new && mv $1.new $1;
+    if [ "$(basename "$1")" = "git-rebase-todo" ]; then
+        sed 's/^pick /reword /g' "$1" > "$1.new" && mv "$1.new" "$1" ;
         return;
     fi
 
-    if [ $(basename "$1") = "COMMIT_EDITMSG" ]; then
+    if [ "$(basename "$1")" = "COMMIT_EDITMSG" ]; then
         # see note above function warn_reference_missing for regex elaboration
         # Lets first check for github issues
         ref=$(git log -n1 --format='%b' | grep -iow -E "${REFRE}" | awk -F '#' '{print $2}');
@@ -210,9 +211,9 @@ editor_mode()
         fi
 
         while true; do
-            echo Commit: "\"$(head -n 1 $1)\""
+            echo Commit: "\"$(head -n 1 "$1" )\""
             echo -n "Github Issue ID: "
-            read issue
+            read -r issue
             if [ -z "$issue" ]; then
                 return;
             fi
@@ -223,14 +224,14 @@ editor_mode()
 
             echo "Select yes '(y)' if this patch fixes the issue/feature completely,"
             echo -n "or is the last of the patchset which brings feature (Y/n): "
-            read fixes
+            read -r fixes
             fixes_string="Fixes"
             if [ "${fixes}" = 'N' ] || [ "${fixes}" = 'n' ]; then
                 fixes_string="Updates"
             fi
 
-            sed "/^Change-Id:/{p; s/^.*$/${fixes_string}: #${issue}/;}" $1 > $1.new && \
-                mv $1.new $1;
+            sed "/^Change-Id:/{p; s/^.*$/${fixes_string}: #${issue}/;}" "$1" > "$1.new" && \
+                mv "$1.new" "$1";
             return;
         done
     fi
@@ -272,7 +273,7 @@ warn_reference_missing()
     echo "to gerrit."
     echo ""
     echo -n "Missing reference to a github issue. Continue (y/N): "
-    read moveon
+    read -r moveon
     if [ "${moveon}" = 'Y' ] || [ "${moveon}" = 'y' ]; then
         return;
     else
@@ -291,7 +292,7 @@ main()
         return;
     fi
 
-    git fetch $UPSTREAM;
+    git fetch "${UPSTREAM}" ;
 
     rebase_changes;
 
@@ -310,7 +311,7 @@ main()
 
     # TODO: add clang-format command here. It will after the changes are done everywhere else
     clang_format=$(clang-format --version)
-    if [ ! -z "${clang_format}" ]; then
+    if [ -n "${clang_format}" ]; then
         # Considering git show may not give any files as output matching the
         # criteria, good to tell script not to fail on error
         set +e
@@ -332,9 +333,9 @@ main()
     fi
 
     if [ -z "${reference}" ]; then
-        $drier git push $USER_REPO HEAD:temp_${branch}/$(date +%Y-%m-%d_%s) $FORCE;
+        $drier git push "${USER_REPO}" HEAD:"temp_${branch}/$(date +%Y-%m-%d_%s)" "${FORCE}";
     else
-        $drier git push $USER_REPO HEAD:issue${reference}_${branch} $FORCE;
+        $drier git push "${USER_REPO}" HEAD:"issue${reference}_${branch}" "${FORCE}";
     fi
 }
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # This test does not use 'showmount' from the nfs-utils package, it would
 # require setting up a portmapper (either rpcbind or portmap, depending on the

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #Test that the setuid bit is healed correctly.
 
 . $(dirname $0)/../../include.rc

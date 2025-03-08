@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 USAGE="This commands provides a utility to control MEMORY utilization for any
 gluster daemon.In this, we use cgroup framework to configure MEMORY limit for

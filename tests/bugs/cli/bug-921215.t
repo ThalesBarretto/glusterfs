@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This is test case for bug no 921215 "Can not create volume with a . in the name"
 

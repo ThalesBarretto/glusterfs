@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #AFR TEST-IDENTIFIER SPLIT-BRAIN
 . $(dirname $0)/../../include.rc

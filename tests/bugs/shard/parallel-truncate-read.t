@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #This test will crash if shard's LRU contains a shard's inode even after the
 #inode is forgotten. Minimum time for crash to happen I saw was 180 seconds

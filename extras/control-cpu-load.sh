@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 USAGE="This script provides a utility to control CPU utilization for any
 gluster daemon.In this, we use cgroup framework to configure CPU quota

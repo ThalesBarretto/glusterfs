@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Clear the trusted.gfid xattr in the brick tree
 

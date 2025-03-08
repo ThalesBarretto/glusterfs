@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #Test that parallel heal-info command execution doesn't result in spurious
 #entries with locking-scheme granular
 

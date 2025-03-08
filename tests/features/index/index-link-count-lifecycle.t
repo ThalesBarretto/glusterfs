@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #Index link-count lifecycle tests
 
 . $(dirname $0)/../../include.rc

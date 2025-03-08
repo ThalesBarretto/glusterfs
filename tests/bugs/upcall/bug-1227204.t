@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This regression test tries to ensure that quota limit-usage set work with
 # features.cache-invalidation on.

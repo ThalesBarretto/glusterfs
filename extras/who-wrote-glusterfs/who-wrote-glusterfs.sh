@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Gather statistics on "Who wrote GlusterFS". The idea comes from the excellent
 # articles on http://lwn.net/ named "Who wrote <linux-version>?".
@@ -11,7 +11,7 @@
 #  - gitdm.domain-map: map domain names from emailaddresses to companies
 #
 
-DIRNAME=$(dirname $0)
+DIRNAME=$(dirname "${0}")
 
 GITDM_REPO=git://git.lwn.net/gitdm.git
 GITDM_DIR=${DIRNAME}/gitdm
@@ -20,7 +20,7 @@ GITDM_CMD="python ${GITDM_DIR}/gitdm"
 error()
 {
         local ret=${?}
-        printf "${@}\n" > /dev/stderr
+        printf "%s\n" "${*}" > /dev/stderr
         return ${ret}
 }
 
@@ -28,7 +28,7 @@ check_gitdm()
 {
         if [ ! -e "${GITDM_DIR}/gitdm" ]
         then
-                git clone --quiet ${GITDM_REPO} ${DIRNAME}/gitdm
+                git clone --quiet "${GITDM_REPO}" "${DIRNAME}"/gitdm
         fi
 }
 
@@ -39,7 +39,7 @@ REV=${1}
 shift
 # all remaining options are passed to gitdm, see the gitdm script for an
 # explanation of the accepted options.
-GITDM_OPTS=${@}
+GITDM_OPTS=${*}
 
 if ! check_gitdm
 then
@@ -47,4 +47,4 @@ then
         exit 1
 fi
 
-git log --numstat -M ${REV} | ${GITDM_CMD} -b ${DIRNAME} -n ${GITDM_OPTS}
+git log --numstat -M "${REV}" | ${GITDM_CMD} -b "${DIRNAME}" -n "${GITDM_OPTS}"

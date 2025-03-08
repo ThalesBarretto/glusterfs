@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Copyright 2015-2016 Red Hat Inc.  All Rights Reserved
 #
@@ -20,7 +20,7 @@
 # ensure that the NFS GRACE DBUS signal is sent after the VIP moves to
 # the new host.
 
-GANESHA_HA_SH=$(realpath $0)
+GANESHA_HA_SH=$(realpath "$0")
 HA_NUM_SERVERS=0
 HA_SERVERS=""
 HA_VOL_NAME="gluster_shared_storage"
@@ -60,7 +60,7 @@ GANESHA_CONF=
 
 function find_rhel7_conf
 {
- while [[ $# > 0 ]]
+ while [[ $# -gt 0 ]]
         do
                 key="$1"
                 case $key in
@@ -75,9 +75,9 @@ function find_rhel7_conf
          done
 }
 
-if [ -z ${CONFFILE} ]
+if [ -z "${CONFFILE}" ]
         then
-        find_rhel7_conf ${OPTIONS}
+        find_rhel7_conf "${OPTIONS}"
 
 fi
 
@@ -126,15 +126,15 @@ manage_service ()
                 option="no"
         fi
         ssh -oPasswordAuthentication=no -oStrictHostKeyChecking=no -i \
-${SECRET_PEM} root@${new_node} "${GANESHA_HA_SH} --setup-ganesha-conf-files $HA_CONFDIR $option"
+${SECRET_PEM} root@"${new_node}" "${GANESHA_HA_SH} --setup-ganesha-conf-files $HA_CONFDIR $option"
 
         if [[ "${SERVICE_MAN}" == "/bin/systemctl" ]]
         then
                 ssh -oPasswordAuthentication=no -oStrictHostKeyChecking=no -i \
-${SECRET_PEM} root@${new_node} "${SERVICE_MAN}  ${action} nfs-ganesha"
+${SECRET_PEM} root@"${new_node}" "${SERVICE_MAN}  ${action} nfs-ganesha"
         else
                 ssh -oPasswordAuthentication=no -oStrictHostKeyChecking=no -i \
-${SECRET_PEM} root@${new_node} "${SERVICE_MAN} nfs-ganesha ${action}"
+${SECRET_PEM} root@"${new_node}" "${SERVICE_MAN} nfs-ganesha ${action}"
         fi
 }
 
@@ -161,7 +161,7 @@ determine_servers()
     local tmp_ifs=${IFS}
     local ha_servers=""
 
-    if [ "${cmd}X" != "setupX" -a "${cmd}X" != "statusX" ]; then
+    if [ "${cmd}X" != "setupX" ] && [ "${cmd}X" != "statusX" ]; then
         ha_servers=$(pcs status | grep "Online:" | grep -o '\[.*\]' | sed -e 's/\[//' | sed -e 's/\]//')
         IFS=$' '
         for server in ${ha_servers} ; do
@@ -283,16 +283,16 @@ refresh_config ()
         local HA_CONFDIR=${2}
         local short_host=$(hostname -s)
 
-        local export_id=$(grep ^[[:space:]]*Export_Id $HA_CONFDIR/exports/export.$VOL.conf |\
-                          awk -F"[=,;]" '{print $2}' | tr -d '[[:space:]]')
+        local export_id=$(grep -E '^[[:space:]]*Export_Id' "${HA_CONFDIR}/exports/export.${VOL}.conf" |\
+                          awk -F"[=,;]" '{print $2}' | tr -d '[:space:]')
 
 
         if [ -e ${SECRET_PEM} ]; then
         while [[ ${3} ]]; do
-            current_host=`echo ${3} | cut -d "." -f 1`
-            if [[ ${short_host} != ${current_host} ]]; then
+        current_host=$(echo "${3}" | cut -d "." -f 1)
+            if [[ ${short_host} != "${current_host}" ]]; then
                 output=$(ssh -oPasswordAuthentication=no \
--oStrictHostKeyChecking=no -i ${SECRET_PEM} root@${current_host} \
+-oStrictHostKeyChecking=no -i "${SECRET_PEM}" root@"${current_host}" \
 "dbus-send --print-reply --system --dest=org.ganesha.nfsd \
 /org/ganesha/nfsd/ExportMgr org.ganesha.nfsd.exportmgr.UpdateExport \
 string:$HA_CONFDIR/exports/export.$VOL.conf \
@@ -316,7 +316,7 @@ string:\"EXPORT(Export_Id=$export_id)\" 2>&1")
     # Run the same command on the localhost,
         output=$(dbus-send --print-reply --system --dest=org.ganesha.nfsd \
 /org/ganesha/nfsd/ExportMgr org.ganesha.nfsd.exportmgr.UpdateExport \
-string:$HA_CONFDIR/exports/export.$VOL.conf \
+string:"${HA_CONFDIR}/exports/export.${VOL}.conf" \
 string:"EXPORT(Export_Id=$export_id)" 2>&1)
         ret=$?
         logger <<< "${output}"
@@ -336,12 +336,12 @@ teardown_cluster()
         if [[ ${HA_CLUSTER_NODES} != *${server}* ]]; then
             logger "info: ${server} is not in config, removing"
 
-            pcs cluster stop ${server} --force
+            pcs cluster stop "${server}" --force
             if [ $? -ne 0 ]; then
                 logger "warning: pcs cluster stop ${server} failed"
             fi
 
-            pcs cluster node remove ${server}
+            pcs cluster node remove "${server}"
             if [ $? -ne 0 ]; then
                 logger "warning: pcs cluster node remove ${server} failed"
             fi
@@ -374,7 +374,7 @@ cleanup_ganesha_config ()
     rm -f /etc/corosync/corosync.conf
     rm -rf /etc/cluster/cluster.conf*
     rm -rf /var/lib/pacemaker/cib/*
-    sed -r -i -e '/^%include[[:space:]]+".+\.conf"$/d'  $HA_CONFDIR/ganesha.conf
+    sed -r -i -e '/^%include[[:space:]]+".+\.conf"$/d'  "${HA_CONFDIR}/ganesha.conf"
 }
 
 do_create_virt_ip_constraints()
@@ -385,7 +385,7 @@ do_create_virt_ip_constraints()
 
     # first a constraint location rule that says the VIP must be where
     # there's a ganesha.nfsd running
-    pcs -f ${cibfile} constraint location ${primary}-group rule score=-INFINITY ganesha-active ne 1
+    pcs -f "${cibfile}" constraint location ${primary}-group rule score=-INFINITY ganesha-active ne 1
     if [ $? -ne 0 ]; then
         logger "warning: pcs constraint location ${primary}-group rule score=-INFINITY ganesha-active ne 1 failed"
     fi
@@ -393,7 +393,7 @@ do_create_virt_ip_constraints()
     # then a set of constraint location prefers to set the prefered order
     # for where a VIP should move
     while [[ ${1} ]]; do
-        pcs -f ${cibfile} constraint location ${primary}-group prefers ${1}=${weight}
+        pcs -f "${cibfile}" constraint location "${primary}"-group prefers ${1}=${weight}
         if [ $? -ne 0 ]; then
             logger "warning: pcs constraint location ${primary}-group prefers ${1}=${weight} failed"
         fi
@@ -405,7 +405,7 @@ do_create_virt_ip_constraints()
     # on Fedora setting appears to be additive, so to get the desired
     # value we adjust the weight
     # weight=$(expr ${weight} - 100)
-    pcs -f ${cibfile} constraint location ${primary}-group prefers ${primary}=${weight}
+    pcs -f "${cibfile}" constraint location "${primary}"-group prefers ${primary}=${weight}
     if [ $? -ne 0 ]; then
         logger "warning: pcs constraint location ${primary}-group prefers ${primary}=${weight} failed"
     fi
@@ -423,7 +423,7 @@ wrap_create_virt_ip_constraints()
     # the result is "node2 node3 node4"; for node2, "node3 node4 node1"
     # and so on.
     while [[ ${1} ]]; do
-        if [[ ${1} == ${primary} ]]; then
+        if [[ ${1} == "${primary}" ]]; then
             shift
             while [[ ${1} ]]; do
                 tail=${tail}" "${1}
@@ -434,7 +434,7 @@ wrap_create_virt_ip_constraints()
         fi
         shift
     done
-    do_create_virt_ip_constraints ${cibfile} ${primary} ${tail} ${head}
+    do_create_virt_ip_constraints "${cibfile}" "${primary}" "${tail}" "${head}"
 }
 
 
@@ -443,7 +443,7 @@ create_virt_ip_constraints()
     local cibfile=${1}; shift
 
     while [[ ${1} ]]; do
-        wrap_create_virt_ip_constraints ${cibfile} ${1} ${HA_SERVERS}
+        wrap_create_virt_ip_constraints "${cibfile}" "${1}" "${HA_SERVERS}"
         shift
     done
 }
@@ -480,7 +480,7 @@ setup_create_resources()
         logger "warning: pcs constraint location nfs-grace-clone rule score=-INFINITY grace-active ne 1"
     fi
 
-    pcs cluster cib ${cibfile}
+    pcs cluster cib "${cibfile}"
 
     while [[ ${1} ]]; do
 
@@ -496,32 +496,32 @@ setup_create_resources()
         # to give us ipaddr="10.7.6.5". whew!
         name="VIP_${1}"
         clean_name=${name//[-.]/_}
-        nvs=$(grep "^${name}=" ${HA_CONFDIR}/ganesha-ha.conf)
+        nvs=$(grep "^${name}=" "${HA_CONFDIR}"/ganesha-ha.conf)
         clean_nvs=${nvs//[-.]/_}
         eval ${clean_nvs}
         eval tmp_ipaddr=\$${clean_name}
         ipaddr=${tmp_ipaddr//_/.}
 
-        pcs -f ${cibfile} resource create ${1}-nfs_block ocf:heartbeat:portblock protocol=tcp \
-        portno=2049 action=block ip=${ipaddr} --group ${1}-group
+        pcs -f "${cibfile}" resource create "${1}"-nfs_block ocf:heartbeat:portblock protocol=tcp \
+        portno=2049 action=block ip=${ipaddr} --group "${1}"-group
         if [ $? -ne 0 ]; then
             logger "warning pcs resource create ${1}-nfs_block failed"
         fi
-        pcs -f ${cibfile} resource create ${1}-cluster_ip-1 ocf:heartbeat:IPaddr ip=${ipaddr} \
-        cidr_netmask=32 op monitor interval=15s --group ${1}-group --after ${1}-nfs_block
+        pcs -f "${cibfile}" resource create "${1}"-cluster_ip-1 ocf:heartbeat:IPaddr ip=${ipaddr} \
+        cidr_netmask=32 op monitor interval=15s --group "${1}"-group --after "${1}"-nfs_block
         if [ $? -ne 0 ]; then
             logger "warning pcs resource create ${1}-cluster_ip-1 ocf:heartbeat:IPaddr ip=${ipaddr} \
             cidr_netmask=32 op monitor interval=15s failed"
         fi
 
-        pcs -f ${cibfile} constraint order nfs-grace-clone then ${1}-cluster_ip-1
+        pcs -f "${cibfile}" constraint order nfs-grace-clone then "${1}"-cluster_ip-1
         if [ $? -ne 0 ]; then
             logger "warning: pcs constraint order nfs-grace-clone then ${1}-cluster_ip-1 failed"
         fi
 
-        pcs -f ${cibfile} resource create ${1}-nfs_unblock ocf:heartbeat:portblock protocol=tcp \
-        portno=2049 action=unblock ip=${ipaddr} reset_local_on_unblock_stop=true \
-        tickle_dir=${HA_VOL_MNT}/nfs-ganesha/tickle_dir/ --group ${1}-group --after ${1}-cluster_ip-1 \
+        pcs -f "${cibfile}" resource create "${1}"-nfs_unblock ocf:heartbeat:portblock protocol=tcp \
+        portno=2049 action=unblock ip="${ipaddr}" reset_local_on_unblock_stop=true \
+        tickle_dir=${HA_VOL_MNT}/nfs-ganesha/tickle_dir/ --group "${1}"-group --after "${1}"-cluster_ip-1 \
         op stop timeout=${PORTBLOCK_UNBLOCK_TIMEOUT} op start timeout=${PORTBLOCK_UNBLOCK_TIMEOUT} \
         op monitor interval=10s timeout=${PORTBLOCK_UNBLOCK_TIMEOUT}
         if [ $? -ne 0 ]; then
@@ -532,13 +532,13 @@ setup_create_resources()
         shift
     done
 
-    create_virt_ip_constraints ${cibfile} ${HA_SERVERS}
+    create_virt_ip_constraints "${cibfile}" "${HA_SERVERS}"
 
-    pcs cluster cib-push ${cibfile}
+    pcs cluster cib-push "${cibfile}"
     if [ $? -ne 0 ]; then
         logger "warning pcs cluster cib-push ${cibfile} failed"
     fi
-    rm -f ${cibfile}
+    rm -f "${cibfile}"
 }
 
 
@@ -567,7 +567,7 @@ teardown_resources()
     fi
 
     while [[ ${1} ]]; do
-        pcs resource delete ${1}-group
+        pcs resource delete "${1}"-group
         if [ $? -ne 0 ]; then
             logger "warning: pcs resource delete ${1}-group failed"
         fi
@@ -586,32 +586,32 @@ recreate_resources()
         # see the comment on the same a few lines up
         name="VIP_${1}"
         clean_name=${name//[-.]/_}
-        nvs=$(grep "^${name}=" ${HA_CONFDIR}/ganesha-ha.conf)
+        nvs=$(grep "^${name}=" "${HA_CONFDIR}"/ganesha-ha.conf)
         clean_nvs=${nvs//[-.]/_}
-        eval ${clean_nvs}
+        eval "${clean_nvs}"
         eval tmp_ipaddr=\$${clean_name}
         ipaddr=${tmp_ipaddr//_/.}
 
-        pcs -f ${cibfile} resource create ${1}-nfs_block ocf:heartbeat:portblock protocol=tcp \
-        portno=2049 action=block ip=${ipaddr} --group ${1}-group
+        pcs -f "${cibfile}" resource create "${1}"-nfs_block ocf:heartbeat:portblock protocol=tcp \
+        portno=2049 action=block ip="${ipaddr}" --group "${1}"-group
         if [ $? -ne 0 ]; then
-            logger "warning pcs resource create ${1}-nfs_block failed"
+            logger "warning pcs resource create "${1}"-nfs_block failed"
         fi
-        pcs -f ${cibfile} resource create ${1}-cluster_ip-1 ocf:heartbeat:IPaddr ip=${ipaddr} \
-        cidr_netmask=32 op monitor interval=15s --group ${1}-group --after ${1}-nfs_block
+        pcs -f "${cibfile}" resource create "${1}"-cluster_ip-1 ocf:heartbeat:IPaddr ip="${ipaddr}" \
+        cidr_netmask=32 op monitor interval=15s --group "${1}"-group --after "${1}"-nfs_block
         if [ $? -ne 0 ]; then
             logger "warning pcs resource create ${1}-cluster_ip-1 ocf:heartbeat:IPaddr ip=${ipaddr} \
             cidr_netmask=32 op monitor interval=15s failed"
         fi
 
-        pcs -f ${cibfile} constraint order nfs-grace-clone then ${1}-cluster_ip-1
+        pcs -f "${cibfile}" constraint order nfs-grace-clone then "${1}"-cluster_ip-1
         if [ $? -ne 0 ]; then
             logger "warning: pcs constraint order nfs-grace-clone then ${1}-cluster_ip-1 failed"
         fi
 
-        pcs -f ${cibfile} resource create ${1}-nfs_unblock ocf:heartbeat:portblock protocol=tcp \
-        portno=2049 action=unblock ip=${ipaddr} reset_local_on_unblock_stop=true \
-        tickle_dir=${HA_VOL_MNT}/nfs-ganesha/tickle_dir/ --group ${1}-group --after ${1}-cluster_ip-1 \
+        pcs -f "${cibfile}" resource create "${1}"-nfs_unblock ocf:heartbeat:portblock protocol=tcp \
+        portno=2049 action=unblock ip="${ipaddr}" reset_local_on_unblock_stop=true \
+        tickle_dir=${HA_VOL_MNT}/nfs-ganesha/tickle_dir/ --group "${1}"-group --after "${1}"-cluster_ip-1 \
         op stop timeout=${PORTBLOCK_UNBLOCK_TIMEOUT} op start timeout=${PORTBLOCK_UNBLOCK_TIMEOUT} \
         op monitor interval=10s timeout=${PORTBLOCK_UNBLOCK_TIMEOUT}
         if [ $? -ne 0 ]; then
@@ -629,28 +629,28 @@ addnode_recreate_resources()
     local add_node=${1}; shift
     local add_vip=${1}; shift
 
-    recreate_resources ${cibfile} ${HA_SERVERS}
+    recreate_resources "${cibfile}" "${HA_SERVERS}"
 
-    pcs -f ${cibfile} resource create ${add_node}-nfs_block ocf:heartbeat:portblock \
-    protocol=tcp portno=2049 action=block ip=${add_vip} --group ${add_node}-group
+    pcs -f "${cibfile}" resource create "${add_node}"-nfs_block ocf:heartbeat:portblock \
+    protocol=tcp portno=2049 action=block ip="${add_vip}" --group "${add_node}"-group
     if [ $? -ne 0 ]; then
         logger "warning pcs resource create ${add_node}-nfs_block failed"
     fi
-    pcs -f ${cibfile} resource create ${add_node}-cluster_ip-1 ocf:heartbeat:IPaddr \
-    ip=${add_vip} cidr_netmask=32 op monitor interval=15s --group ${add_node}-group \
-    --after ${add_node}-nfs_block
+    pcs -f "${cibfile}" resource create "${add_node}"-cluster_ip-1 ocf:heartbeat:IPaddr \
+    ip="${add_vip}" cidr_netmask=32 op monitor interval=15s --group "${add_node}"-group \
+    --after "${add_node}"-nfs_block
     if [ $? -ne 0 ]; then
         logger "warning pcs resource create ${add_node}-cluster_ip-1 ocf:heartbeat:IPaddr \
         ip=${add_vip} cidr_netmask=32 op monitor interval=15s failed"
     fi
 
-    pcs -f ${cibfile} constraint order nfs-grace-clone then ${add_node}-cluster_ip-1
+    pcs -f "${cibfile}" constraint order nfs-grace-clone then "${add_node}"-cluster_ip-1
     if [ $? -ne 0 ]; then
         logger "warning: pcs constraint order nfs-grace-clone then ${add_node}-cluster_ip-1 failed"
     fi
-    pcs -f ${cibfile} resource create ${add_node}-nfs_unblock ocf:heartbeat:portblock \
+    pcs -f "${cibfile}" resource create ${add_node}-nfs_unblock ocf:heartbeat:portblock \
     protocol=tcp portno=2049 action=unblock ip=${add_vip} reset_local_on_unblock_stop=true \
-    tickle_dir=${HA_VOL_MNT}/nfs-ganesha/tickle_dir/ --group ${add_node}-group --after \
+    tickle_dir=${HA_VOL_MNT}/nfs-ganesha/tickle_dir/ --group "${add_node}"-group --after \
     ${add_node}-cluster_ip-1 op stop timeout=${PORTBLOCK_UNBLOCK_TIMEOUT} op start \
     timeout=${PORTBLOCK_UNBLOCK_TIMEOUT} op monitor interval=10s \
     timeout=${PORTBLOCK_UNBLOCK_TIMEOUT}
@@ -665,7 +665,7 @@ clear_resources()
     local cibfile=${1}; shift
 
     while [[ ${1} ]]; do
-        pcs -f ${cibfile} resource delete ${1}-group
+        pcs -f "${cibfile}" resource delete "${1}"-group
         if [ $? -ne 0 ]; then
             logger "warning: pcs -f ${cibfile} resource delete ${1}-group"
         fi
@@ -682,7 +682,7 @@ addnode_create_resources()
     local cibfile=$(mktemp -u)
 
     # start HA on the new node
-    pcs cluster start ${add_node}
+    pcs cluster start "${add_node}"
     if [ $? -ne 0 ]; then
        logger "warning: pcs cluster start ${add_node} failed"
     fi
@@ -695,27 +695,27 @@ addnode_create_resources()
     # delete all the -cluster_ip-1 resources, clearing
     # their constraints, then create them again so we can
     # recompute their constraints
-    clear_resources ${cibfile} ${HA_SERVERS}
-    addnode_recreate_resources ${cibfile} ${add_node} ${add_vip}
+    clear_resources "${cibfile}" "${HA_SERVERS}"
+    addnode_recreate_resources "${cibfile}" "${add_node}" "${add_vip}"
 
-    HA_SERVERS="${HA_SERVERS} ${add_node}"
-    create_virt_ip_constraints ${cibfile} ${HA_SERVERS}
+    HA_SERVERS="${HA_SERVERS}" "${add_node}"
+    create_virt_ip_constraints "${cibfile}" "${HA_SERVERS}"
 
-    pcs cluster cib-push ${cibfile}
+    pcs cluster cib-push "${cibfile}"
     if [ $? -ne 0 ]; then
         logger "warning: pcs cluster cib-push ${cibfile} failed"
     fi
-    rm -f ${cibfile}
+    rm -f "${cibfile}"
 }
 
 
 deletenode_delete_resources()
 {
     local node=${1}; shift
-    local ha_servers=$(echo "${HA_SERVERS}" | sed s/${node}//)
+    local ha_servers=$(echo "${HA_SERVERS}" | sed "s/${node}//")
     local cibfile=$(mktemp -u)
 
-    pcs cluster cib ${cibfile}
+    pcs cluster cib "${cibfile}"
     if [ $? -ne 0 ]; then
         logger "warning: pcs cluster cib ${cibfile} failed"
     fi
@@ -723,17 +723,17 @@ deletenode_delete_resources()
     # delete all the -cluster_ip-1 and -trigger_ip-1 resources,
     # clearing their constraints, then create them again so we can
     # recompute their constraints
-    clear_resources ${cibfile} ${HA_SERVERS}
-    recreate_resources ${cibfile} ${ha_servers}
+    clear_resources "${cibfile}" "${HA_SERVERS}"
+    recreate_resources "${cibfile}" "${ha_servers}"
     HA_SERVERS=$(echo "${ha_servers}" | sed -e "s/  / /")
 
-    create_virt_ip_constraints ${cibfile} ${HA_SERVERS}
+    create_virt_ip_constraints "${cibfile}" "${HA_SERVERS}"
 
-    pcs cluster cib-push ${cibfile}
+    pcs cluster cib-push "${cibfile}"
     if [ $? -ne 0 ]; then
         logger "warning: pcs cluster cib-push ${cibfile} failed"
     fi
-    rm -f ${cibfile}
+    rm -f "${cibfile}"
 
 }
 
@@ -743,8 +743,8 @@ deletenode_update_haconfig()
     local name="VIP_${1}"
     local clean_name=${name//[-.]/_}
 
-    ha_servers=$(echo ${HA_SERVERS} | sed -e "s/ /,/")
-    sed -i -e "s/^HA_CLUSTER_NODES=.*$/HA_CLUSTER_NODES=\"${ha_servers// /,}\"/" -e "s/^${name}=.*$//" -e "/^$/d" ${HA_CONFDIR}/ganesha-ha.conf
+    ha_servers=$(echo "${HA_SERVERS}" | sed -e "s/ /,/")
+    sed -i -e "s/^HA_CLUSTER_NODES=.*$/HA_CLUSTER_NODES=\"${ha_servers// /,}\"/" -e "s/^${name}=.*$//" -e "/^$/d" "${HA_CONFDIR}/ganesha-ha.conf"
 }
 
 
@@ -767,47 +767,47 @@ setup_state_volume()
             dirname=${1}${dname}
         fi
 
-        if [ ! -d ${mnt}/nfs-ganesha/tickle_dir ]; then
-            mkdir ${mnt}/nfs-ganesha/tickle_dir
+        if [ ! -d "${mnt}/nfs-ganesha/tickle_dir" ]; then
+            mkdir "${mnt}/nfs-ganesha/tickle_dir"
         fi
-        if [ ! -d ${mnt}/nfs-ganesha/${dirname} ]; then
-            mkdir ${mnt}/nfs-ganesha/${dirname}
+        if [ ! -d "${mnt}/nfs-ganesha/${dirname}" ]; then
+            mkdir "${mnt}/nfs-ganesha/${dirname}"
         fi
-        if [ ! -d ${mnt}/nfs-ganesha/${dirname}/nfs ]; then
-            mkdir ${mnt}/nfs-ganesha/${dirname}/nfs
+        if [ ! -d "${mnt}/nfs-ganesha/${dirname}/nfs" ]; then
+            mkdir "${mnt}/nfs-ganesha/${dirname}/nfs"
         fi
-        if [ ! -d ${mnt}/nfs-ganesha/${dirname}/nfs/ganesha ]; then
-            mkdir ${mnt}/nfs-ganesha/${dirname}/nfs/ganesha
+        if [ ! -d "${mnt}/nfs-ganesha/${dirname}/nfs/ganesha" ]; then
+            mkdir "${mnt}/nfs-ganesha/${dirname}/nfs/ganesha"
         fi
-        if [ ! -d ${mnt}/nfs-ganesha/${dirname}/nfs/statd ]; then
-            mkdir ${mnt}/nfs-ganesha/${dirname}/nfs/statd
-            chown rpcuser:rpcuser ${mnt}/nfs-ganesha/${dirname}/nfs/statd
+        if [ ! -d "${mnt}/nfs-ganesha/${dirname}/nfs/statd" ]; then
+            mkdir "${mnt}/nfs-ganesha/${dirname}/nfs/statd"
+            chown rpcuser:rpcuser "${mnt}/nfs-ganesha/${dirname}/nfs/statd"
         fi
-        if [ ! -e ${mnt}/nfs-ganesha/${dirname}/nfs/state ]; then
-            touch ${mnt}/nfs-ganesha/${dirname}/nfs/state
-            chown rpcuser:rpcuser ${mnt}/nfs-ganesha/${dirname}/nfs/state
+        if [ ! -e "${mnt}/nfs-ganesha/${dirname}/nfs/state" ]; then
+            touch "${mnt}/nfs-ganesha/${dirname}/nfs/state"
+            chown rpcuser:rpcuser "${mnt}/nfs-ganesha/${dirname}/nfs/state"
         fi
-        if [ ! -d ${mnt}/nfs-ganesha/${dirname}/nfs/ganesha/v4recov ]; then
-            mkdir ${mnt}/nfs-ganesha/${dirname}/nfs/ganesha/v4recov
+        if [ ! -d "${mnt}/nfs-ganesha/${dirname}/nfs/ganesha/v4recov" ]; then
+            mkdir "${mnt}/nfs-ganesha/${dirname}/nfs/ganesha/v4recov"
         fi
-        if [ ! -d ${mnt}/nfs-ganesha/${dirname}/nfs/ganesha/v4old ]; then
-            mkdir ${mnt}/nfs-ganesha/${dirname}/nfs/ganesha/v4old
+        if [ ! -d "${mnt}/nfs-ganesha/${dirname}/nfs/ganesha/v4old" ]; then
+            mkdir "${mnt}/nfs-ganesha/${dirname}/nfs/ganesha/v4old"
         fi
-        if [ ! -d ${mnt}/nfs-ganesha/${dirname}/nfs/statd/sm ]; then
-            mkdir ${mnt}/nfs-ganesha/${dirname}/nfs/statd/sm
-            chown rpcuser:rpcuser ${mnt}/nfs-ganesha/${dirname}/nfs/statd/sm
+        if [ ! -d "${mnt}/nfs-ganesha/${dirname}/nfs/statd/sm" ]; then
+            mkdir "${mnt}/nfs-ganesha/${dirname}/nfs/statd/sm"
+            chown rpcuser:rpcuser "${mnt}/nfs-ganesha/${dirname}/nfs/statd/sm"
         fi
-        if [ ! -d ${mnt}/nfs-ganesha/${dirname}/nfs/statd/sm.bak ]; then
-            mkdir ${mnt}/nfs-ganesha/${dirname}/nfs/statd/sm.bak
-            chown rpcuser:rpcuser ${mnt}/nfs-ganesha/${dirname}/nfs/statd/sm.bak
+        if [ ! -d "${mnt}/nfs-ganesha/${dirname}/nfs/statd/sm.bak" ]; then
+            mkdir "${mnt}/nfs-ganesha/${dirname}/nfs/statd/sm.bak"
+            chown rpcuser:rpcuser "${mnt}/nfs-ganesha/${dirname}/nfs/statd/sm.bak"
         fi
-        if [ ! -e ${mnt}/nfs-ganesha/${dirname}/nfs/statd/state ]; then
-            touch ${mnt}/nfs-ganesha/${dirname}/nfs/statd/state
+        if [ ! -e "${mnt}/nfs-ganesha/${dirname}/nfs/statd/state" ]; then
+            touch "${mnt}/nfs-ganesha/${dirname}/nfs/statd/state"
         fi
         for server in ${HA_SERVERS} ; do
-            if [[ ${server} != ${dirname} ]]; then
-                ln -s ${mnt}/nfs-ganesha/${server}/nfs/ganesha ${mnt}/nfs-ganesha/${dirname}/nfs/ganesha/${server}
-                ln -s ${mnt}/nfs-ganesha/${server}/nfs/statd ${mnt}/nfs-ganesha/${dirname}/nfs/statd/${server}
+            if [[ ${server} != "${dirname}" ]]; then
+                ln -s "${mnt}/nfs-ganesha/${server}/nfs/ganesha" "${mnt}/nfs-ganesha/${dirname}/nfs/ganesha/${server}"
+                ln -s "${mnt}/nfs-ganesha/${server}/nfs/statd"   "${mnt}/nfs-ganesha/${dirname}/nfs/statd/${server}"
             fi
         done
         shift
@@ -848,49 +848,49 @@ addnode_state_volume()
         dirname=${newnode}${dname}
     fi
 
-    if [ ! -d ${mnt}/nfs-ganesha/${dirname} ]; then
-        mkdir ${mnt}/nfs-ganesha/${dirname}
+    if [ ! -d "${mnt}/nfs-ganesha/${dirname}" ]; then
+        mkdir "${mnt}/nfs-ganesha/${dirname}"
     fi
-    if [ ! -d ${mnt}/nfs-ganesha/${dirname}/nfs ]; then
-        mkdir ${mnt}/nfs-ganesha/${dirname}/nfs
+    if [ ! -d "${mnt}/nfs-ganesha/${dirname}/nfs" ]; then
+        mkdir "${mnt}/nfs-ganesha/${dirname}/nfs"
     fi
-    if [ ! -d ${mnt}/nfs-ganesha/${dirname}/nfs/ganesha ]; then
-        mkdir ${mnt}/nfs-ganesha/${dirname}/nfs/ganesha
+    if [ ! -d "${mnt}/nfs-ganesha/${dirname}/nfs/ganesha" ]; then
+        mkdir "${mnt}/nfs-ganesha/${dirname}/nfs/ganesha"
     fi
-    if [ ! -d ${mnt}/nfs-ganesha/${dirname}/nfs/statd ]; then
-        mkdir ${mnt}/nfs-ganesha/${dirname}/nfs/statd
-        chown rpcuser:rpcuser ${mnt}/nfs-ganesha/${dirname}/nfs/statd
+    if [ ! -d "${mnt}/nfs-ganesha/${dirname}/nfs/statd" ]; then
+        mkdir "${mnt}/nfs-ganesha/${dirname}/nfs/statd"
+        chown rpcuser:rpcuser "${mnt}/nfs-ganesha/${dirname}/nfs/statd"
     fi
-    if [ ! -e ${mnt}/nfs-ganesha/${dirname}/nfs/state ]; then
-        touch ${mnt}/nfs-ganesha/${dirname}/nfs/state
-        chown rpcuser:rpcuser ${mnt}/nfs-ganesha/${dirname}/nfs/state
+    if [ ! -e "${mnt}/nfs-ganesha/${dirname}/nfs/state" ]; then
+        touch "${mnt}/nfs-ganesha/${dirname}/nfs/state"
+        chown rpcuser:rpcuser "${mnt}/nfs-ganesha/${dirname}/nfs/state"
     fi
-    if [ ! -d ${mnt}/nfs-ganesha/${dirname}/nfs/ganesha/v4recov ]; then
-        mkdir ${mnt}/nfs-ganesha/${dirname}/nfs/ganesha/v4recov
+    if [ ! -d "${mnt}/nfs-ganesha/${dirname}/nfs/ganesha/v4recov" ]; then
+        mkdir "${mnt}/nfs-ganesha/${dirname}/nfs/ganesha/v4recov"
     fi
-    if [ ! -d ${mnt}/nfs-ganesha/${dirname}/nfs/ganesha/v4old ]; then
-        mkdir ${mnt}/nfs-ganesha/${dirname}/nfs/ganesha/v4old
+    if [ ! -d "${mnt}/nfs-ganesha/${dirname}/nfs/ganesha/v4old" ]; then
+        mkdir "${mnt}/nfs-ganesha/${dirname}/nfs/ganesha/v4old"
     fi
-    if [ ! -d ${mnt}/nfs-ganesha/${dirname}/nfs/statd/sm ]; then
-        mkdir ${mnt}/nfs-ganesha/${dirname}/nfs/statd/sm
-        chown rpcuser:rpcuser ${mnt}/nfs-ganesha/${dirname}/nfs/statd/sm
+    if [ ! -d "${mnt}/nfs-ganesha/${dirname}/nfs/statd/sm" ]; then
+        mkdir "${mnt}/nfs-ganesha/${dirname}/nfs/statd/sm"
+        chown rpcuser:rpcuser "${mnt}/nfs-ganesha/${dirname}/nfs/statd/sm"
     fi
-    if [ ! -d ${mnt}/nfs-ganesha/${dirname}/nfs/statd/sm.bak ]; then
-        mkdir ${mnt}/nfs-ganesha/${dirname}/nfs/statd/sm.bak
-        chown rpcuser:rpcuser ${mnt}/nfs-ganesha/${dirname}/nfs/statd/sm.bak
+    if [ ! -d "${mnt}/nfs-ganesha/${dirname}/nfs/statd/sm.bak" ]; then
+        mkdir "${mnt}/nfs-ganesha/${dirname}/nfs/statd/sm.bak"
+        chown rpcuser:rpcuser "${mnt}/nfs-ganesha/${dirname}/nfs/statd/sm.bak"
     fi
-    if [ ! -e ${mnt}/nfs-ganesha/${dirname}/nfs/statd/state ]; then
-        touch ${mnt}/nfs-ganesha/${dirname}/nfs/statd/state
+    if [ ! -e "${mnt}/nfs-ganesha/${dirname}/nfs/statd/state" ]; then
+        touch "${mnt}/nfs-ganesha/${dirname}/nfs/statd/state"
     fi
 
     for server in ${HA_SERVERS} ; do
 
-        if [[ ${server} != ${dirname} ]]; then
-            ln -s ${mnt}/nfs-ganesha/${server}/nfs/ganesha ${mnt}/nfs-ganesha/${dirname}/nfs/ganesha/${server}
-            ln -s ${mnt}/nfs-ganesha/${server}/nfs/statd ${mnt}/nfs-ganesha/${dirname}/nfs/statd/${server}
+        if [[ "${server}" != "${dirname}" ]]; then
+            ln -s "${mnt}/nfs-ganesha/${server}/nfs/ganesha" "${mnt}/nfs-ganesha/${dirname}/nfs/ganesha/${server}"
+            ln -s "${mnt}/nfs-ganesha/${server}/nfs/statd" "${mnt}/nfs-ganesha/${dirname}/nfs/statd/${server}"
 
-            ln -s ${mnt}/nfs-ganesha/${dirname}/nfs/ganesha ${mnt}/nfs-ganesha/${server}/nfs/ganesha/${dirname}
-            ln -s ${mnt}/nfs-ganesha/${dirname}/nfs/statd ${mnt}/nfs-ganesha/${server}/nfs/statd/${dirname}
+            ln -s "${mnt}/nfs-ganesha/${dirname}/nfs/ganesha" "${mnt}/nfs-ganesha/${server}/nfs/ganesha/${dirname}"
+            ln -s "${mnt}/nfs-ganesha/${dirname}/nfs/statd" "${mnt}/nfs-ganesha/${server}/nfs/statd/${dirname}"
         fi
     done
 
@@ -914,12 +914,12 @@ delnode_state_volume()
         dirname=${delnode}${dname}
     fi
 
-    rm -rf ${mnt}/nfs-ganesha/${dirname}
+    rm -rf "${mnt}/nfs-ganesha/${dirname}"
 
     for server in ${HA_SERVERS} ; do
-        if [[ ${server} != ${dirname} ]]; then
-            rm -f ${mnt}/nfs-ganesha/${server}/nfs/ganesha/${dirname}
-            rm -f ${mnt}/nfs-ganesha/${server}/nfs/statd/${dirname}
+        if [[ ${server} != "${dirname}" ]]; then
+            rm -f "${mnt}/nfs-ganesha/${server}/nfs/ganesha/${dirname}"
+            rm -f "${mnt}/nfs-ganesha/${server}/nfs/statd/${dirname}"
         fi
     done
 }
@@ -935,7 +935,7 @@ status()
 
     # change tabs to spaces, strip leading spaces, including any 
     # new '*' at the beginning of a line introduced in pcs-0.10.x
-    pcs status | sed -e "s/\t/ /g" -e "s/^[ ]*\*//" -e "s/^[ ]*//" > ${scratch}
+    pcs status | sed -e "s/\t/ /g" -e "s/^[ ]*\*//" -e "s/^[ ]*//" > "${scratch}"
 
     nodes[0]=${1}; shift
 
@@ -950,7 +950,7 @@ status()
     done
 
     # print the nodes that are expected to be online
-    grep -E "Online:" ${scratch}
+    grep -E "Online:" "${scratch}"
 
     echo
 
@@ -962,18 +962,18 @@ status()
     # check if the VIP and port block/unblock RAs are on the expected nodes
     for n in ${nodes[*]}; do
 
-        grep -E -x "${n}-nfs_block +\(ocf::heartbeat:portblock\): +Started ${n}" > /dev/null 2>&1 ${scratch}
+        grep -E -x "${n}-nfs_block +\(ocf::heartbeat:portblock\): +Started ${n}" > /dev/null 2>&1 "${scratch}"
         result=$?
         ((healthy+=${result}))
-        grep -E -x "${n}-cluster_ip-1 +\(ocf::heartbeat:IPaddr\): +Started ${n}" > /dev/null 2>&1 ${scratch}
+        grep -E -x "${n}-cluster_ip-1 +\(ocf::heartbeat:IPaddr\): +Started ${n}" > /dev/null 2>&1 "${scratch}"
         result=$?
         ((healthy+=${result}))
-        grep -E -x "${n}-nfs_unblock +\(ocf::heartbeat:portblock\): +Started ${n}" > /dev/null 2>&1 ${scratch}
+        grep -E -x "${n}-nfs_unblock +\(ocf::heartbeat:portblock\): +Started ${n}" > /dev/null 2>&1 "${scratch}"
         result=$?
         ((healthy+=${result}))
     done
 
-    grep -E "\): +Stopped|FAILED" > /dev/null 2>&1 ${scratch}
+    grep -E "\): +Stopped|FAILED" > /dev/null 2>&1 "${scratch}"
     result=$?
 
     if [ ${result} -eq 0 ]; then
@@ -984,16 +984,16 @@ status()
         echo "Cluster HA Status: FAILOVER"
     fi
 
-    rm -f ${scratch}
+    rm -f "${scratch}"
 }
 
 create_ganesha_conf_file()
 {
         if [[ "$1" == "yes" ]];
         then
-                if [  -e $GANESHA_CONF ];
+                if [ -e "${GANESHA_CONF}" ];
                 then
-                        rm -rf $GANESHA_CONF
+                        rm -rf "${GANESHA_CONF}"
                 fi
         # The symlink /etc/ganesha/ganesha.conf need to be
         # created using ganesha conf file mentioned in the
@@ -1002,12 +1002,12 @@ create_ganesha_conf_file()
         # so that ganesha conf editing of ganesha conf will
         # be easy as well as it become more consistent.
 
-                ln -s $HA_CONFDIR/ganesha.conf $GANESHA_CONF
+                ln -s "${HA_CONFDIR}/ganesha.conf" "${GANESHA_CONF}"
         else
         # Restoring previous file
-                rm -rf $GANESHA_CONF
-                cp $HA_CONFDIR/ganesha.conf $GANESHA_CONF
-                sed -r -i -e '/^%include[[:space:]]+".+\.conf"$/d' $GANESHA_CONF
+                rm -rf "${GANESHA_CONF}"
+                cp "${HA_CONFDIR}/ganesha.conf" "${GANESHA_CONF}"
+                sed -r -i -e '/^%include[[:space:]]+".+\.conf"$/d' "${GANESHA_CONF}"
         fi
 }
 
@@ -1016,7 +1016,7 @@ set_quorum_policy()
     local quorum_policy="stop"
     local num_servers=${1}
 
-    if [ ${num_servers} -lt 3 ]; then
+    if [ "${num_servers}" -lt 3 ]; then
         quorum_policy="ignore"
     fi
     pcs property set no-quorum-policy=${quorum_policy}
@@ -1075,9 +1075,10 @@ main()
             fi
         fi
         # pacemaker 2.1.0 changed --timeout=value
-        echo ${crmadmin_vers}
-        crmadmin_vers=`crmadmin --version | grep -o "[12]\.[0-9]\.." | cut -c 1-3`
-        if [[ "${crmadmin_vers}" > "2.0" ]]; then
+        echo "${crmadmin_vers}"
+    crmadmin_vers=$(crmadmin --version | grep -o "[12]\.[0-9]\.." | cut -c 1-3)
+    # bc returns 0=false, 1=true
+    if [[ 0 -ne $( echo "${crmadmin_vers} > 2.0" | bc ) ]]; then
             CRMADM_TIMEOUT_OPTION="5sec"
         fi
 
@@ -1085,15 +1086,15 @@ main()
 
             determine_service_manager
 
-            setup_cluster ${HA_NAME} ${HA_NUM_SERVERS} "${HA_SERVERS}"
+            setup_cluster "${HA_NAME}" "${HA_NUM_SERVERS}" "${HA_SERVERS}"
 
-            setup_create_resources ${HA_SERVERS}
+            setup_create_resources "${HA_SERVERS}"
 
             setup_finalize_ha
 
-            setup_state_volume ${HA_SERVERS}
+            setup_state_volume "${HA_SERVERS}"
 
-            enable_pacemaker ${HA_SERVERS}
+            enable_pacemaker "${HA_SERVERS}"
 
         else
 
@@ -1106,15 +1107,15 @@ main()
 
         determine_servers "teardown"
 
-        teardown_resources ${HA_SERVERS}
+        teardown_resources "${HA_SERVERS}"
 
-        teardown_cluster ${HA_NAME}
+        teardown_cluster "${HA_NAME}"
 
-        cleanup_ganesha_config ${HA_CONFDIR}
+        cleanup_ganesha_config "${HA_CONFDIR}"
         ;;
 
     cleanup | --cleanup)
-        cleanup_ganesha_config ${HA_CONFDIR}
+        cleanup_ganesha_config "${HA_CONFDIR}"
         ;;
 
     add | --add)
@@ -1125,36 +1126,36 @@ main()
 
         determine_service_manager
 
-        manage_service "start" ${node}
+        manage_service "start" "${node}"
 
         determine_servers "add"
 
-        pcs cluster node add ${node}
+        pcs cluster node add "${node}"
         if [ $? -ne 0 ]; then
             logger "warning: pcs cluster node add ${node} failed"
         fi
 
-        addnode_create_resources ${node} ${vip}
+        addnode_create_resources "${node}" "${vip}"
         # Subsequent add-node recreates resources for all the nodes
         # that already exist in the cluster. The nodes are picked up
         # from the entries in the ganesha-ha.conf file. Adding the
         # newly added node to the file so that the resources specfic
         # to this node is correctly recreated in the future.
         clean_node=${node//[-.]/_}
-        echo "VIP_${node}=\"${vip}\"" >> ${HA_CONFDIR}/ganesha-ha.conf
+        echo "VIP_${node}=\"${vip}\"" >> "${HA_CONFDIR}/ganesha-ha.conf"
 
         NEW_NODES="$HA_CLUSTER_NODES,${node}"
 
         sed -i s/HA_CLUSTER_NODES.*/"HA_CLUSTER_NODES=\"$NEW_NODES\""/ \
-$HA_CONFDIR/ganesha-ha.conf
+"$HA_CONFDIR/ganesha-ha.conf"
 
-        addnode_state_volume ${node}
+        addnode_state_volume "${node}"
 
         # addnode_create_resources() already appended ${node} to
         # HA_SERVERS, so only need to increment HA_NUM_SERVERS
         # and set quorum policy
-        HA_NUM_SERVERS=$(expr ${HA_NUM_SERVERS} + 1)
-        set_quorum_policy ${HA_NUM_SERVERS}
+        HA_NUM_SERVERS=$(expr "${HA_NUM_SERVERS}" + 1)
+        set_quorum_policy "${HA_NUM_SERVERS}"
         ;;
 
     delete | --delete)
@@ -1164,29 +1165,29 @@ $HA_CONFDIR/ganesha-ha.conf
 
         determine_servers "delete"
 
-        deletenode_delete_resources ${node}
+        deletenode_delete_resources "${node}"
 
-        pcs cluster node remove ${node}
+        pcs cluster node remove "${node}"
         if [ $? -ne 0 ]; then
             logger "warning: pcs cluster node remove ${node} failed"
         fi
 
-        deletenode_update_haconfig ${node}
+        deletenode_update_haconfig "${node}"
 
-        delnode_state_volume ${node}
+        delnode_state_volume "${node}"
 
         determine_service_manager
 
-        manage_service "stop" ${node}
+        manage_service "stop" "${node}"
 
-        HA_NUM_SERVERS=$(expr ${HA_NUM_SERVERS} - 1)
-        set_quorum_policy ${HA_NUM_SERVERS}
+        HA_NUM_SERVERS=$(expr "${HA_NUM_SERVERS}" - 1)
+        set_quorum_policy "${HA_NUM_SERVERS}"
         ;;
 
     status | --status)
         determine_servers "status"
 
-        status ${HA_SERVERS}
+        status "${HA_SERVERS}"
         ;;
 
     refresh-config | --refresh-config)
@@ -1194,12 +1195,12 @@ $HA_CONFDIR/ganesha-ha.conf
 
         determine_servers "refresh-config"
 
-        refresh_config ${VOL} ${HA_CONFDIR} ${HA_SERVERS}
+        refresh_config "${VOL}" "${HA_CONFDIR}" "${HA_SERVERS}"
         ;;
 
     setup-ganesha-conf-files | --setup-ganesha-conf-files)
 
-        create_ganesha_conf_file ${1}
+        create_ganesha_conf_file "$1"
         ;;
 
     *)

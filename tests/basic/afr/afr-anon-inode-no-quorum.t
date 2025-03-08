@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #Test that anon-inode entry is not cleaned up as long as there exists at least
 #one valid entry

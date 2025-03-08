@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ## Test case for bitrot BZ:1210684
 ## Bitrot scrub pause/resume option should give proper error if scrubber is

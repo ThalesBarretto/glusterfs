@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 . $(dirname $0)/../include.rc
 . $(dirname $0)/../volume.rc
@@ -174,7 +174,7 @@ eval "$(ssh-agent -s)"
 SSH_ASKPASS_DIR=$(mktemp -d /tmp/ssh-askpass_XXXXXXXXXXXX)
 SSH_ASKPASS_SCRIPT=$SSH_ASKPASS_DIR/ssh-askpass.sh
 cat > ${SSH_ASKPASS_SCRIPT} <<EOL
-#!/bin/bash
+#!/usr/bin/env bash
 echo "${PASS}"
 EOL
 chmod u+x ${SSH_ASKPASS_SCRIPT}

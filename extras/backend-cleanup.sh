@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script can be used to cleanup the 'cluster/distribute' translator's 
 # stale link files. One may choose to run this only when number of subvolumes

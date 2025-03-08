@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Bug 985074 - Verify stale inode/dentry mappings are cleaned out.
 #

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Helper to verify a given fallocate command is supported and skip a test
 # otherwise. Older versions of the fallocate utility might not support all modes

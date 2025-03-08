@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #This tests that mknod and create fops mark necessary pending changelog
 . $(dirname $0)/../../include.rc

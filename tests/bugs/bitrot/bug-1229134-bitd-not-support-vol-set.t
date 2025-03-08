@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ## Test case for bitrot BZ:1229134
 ## gluster volume set <VOLNAME> bitrot * command succeeds,

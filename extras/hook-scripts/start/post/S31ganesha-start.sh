@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 PROGNAME="Sganesha-start"
 OPTSPEC="volname:,gd-workdir:,version:,volume-op:,first:"
 VOL=
@@ -10,7 +10,7 @@ GLUSTERD_WORKDIR=
 
 function parse_args ()
 {
-        ARGS=$(getopt -l $OPTSPEC  -o "o" -name $PROGNAME "$@")
+        ARGS=$(getopt -l ${OPTSPEC}  -o "o" -name ${PROGNAME} "$@")
         eval set -- "$ARGS"
 
         while true; do
@@ -53,16 +53,16 @@ echo -e "# WARNING : Using Gluster CLI will overwrite manual
 
 echo "EXPORT{"
 echo "      Export_Id = 2;"
-echo "      Path = \"/$VOL\";"
+echo "      Path = \"/${VOL}\";"
 echo "      FSAL {"
 echo "           name = \"GLUSTER\";"
 echo "           hostname=\"localhost\";"
-echo "           volume=\"$VOL\";"
+echo "           volume=\"${VOL}\";"
 echo "           }"
 echo "      Access_type = RW;"
 echo "      Disable_ACL = true;"
 echo "      Squash=\"No_root_squash\";"
-echo "      Pseudo=\"/$VOL\";"
+echo "      Pseudo=\"/${VOL}\";"
 echo "      Protocols = \"3\", \"4\" ;"
 echo "      Transports = \"UDP\",\"TCP\";"
 echo "      SecType = \"sys\";"
@@ -74,14 +74,14 @@ function export_add()
 {
         dbus-send --print-reply --system --dest=org.ganesha.nfsd \
           /org/ganesha/nfsd/ExportMgr org.ganesha.nfsd.exportmgr.AddExport \
-          string:"$GANESHA_DIR/exports/export.$VOL.conf" string:"EXPORT(Export_Id=$EXPORT_ID)"
+          string:"${GANESHA_DIR}/exports/export.${VOL}.conf" string:"EXPORT(Export_Id=${EXPORT_ID})"
 
 }
 
 # based on src/scripts/ganeshactl/Ganesha/export_mgr.py
 function is_exported()
 {
-        local volume="${1}"
+        local volume="$1"
 
         dbus-send --type=method_call --print-reply --system \
                   --dest=org.ganesha.nfsd /org/ganesha/nfsd/ExportMgr \
@@ -95,11 +95,11 @@ function is_exported()
 # enabled for this volume.
 function ganesha_enabled()
 {
-        local volume="${1}"
+        local volume="$1"
         local info_file="${GLUSTERD_WORKDIR}/vols/${VOL}/info"
         local enabled="off"
 
-        enabled=$(grep -w "$ganesha_key" "$info_file" | cut -d"=" -f2)
+        enabled=$(grep -w "${ganesha_key}" "${info_file}" | cut -d'=' -f2)
 
         [ "${enabled}" == "on" ]
 
@@ -108,24 +108,24 @@ function ganesha_enabled()
 
 parse_args "$@"
 
-if ganesha_enabled "$VOL" && ! is_exported "$VOL"
+if ganesha_enabled "${VOL}" && ! is_exported "${VOL}"
 then
         if [ ! -e "${GANESHA_DIR}/exports/export.${VOL}.conf" ]
         then
                 #Remove export entry from nfs-ganesha.conf
-                sed -i "/$VOL.conf/d"  $CONF1
+                sed -i "/${VOL}.conf/d"  "${CONF1}"
                 write_conf "$VOL" > "${GANESHA_DIR}/exports/export.${VOL}.conf"
-                EXPORT_ID=$(cat $GANESHA_DIR/.export_added)
+                EXPORT_ID=$(cat "${GANESHA_DIR}/.export_added")
                 EXPORT_ID=$((EXPORT_ID+1))
-                echo $EXPORT_ID > $GANESHA_DIR/.export_added
-                sed -i s/Export_Id.*/"Export_Id=$EXPORT_ID;"/ \
+                echo "${EXPORT_ID}" > "${GANESHA_DIR}/.export_added"
+                sed -i "s/Export_Id.*/Export_Id=${EXPORT_ID};/" \
                         "$GANESHA_DIR/exports/export.$VOL.conf"
-                echo "%include \"$GANESHA_DIR/exports/export.$VOL.conf\"" >> $CONF1
+                echo "%include \"${GANESHA_DIR}/exports/export.${VOL}.conf\"" >> "${CONF1}"
         else
-                EXPORT_ID=$(grep '^[[:space:]]*Export_Id' "$GANESHA_DIR/exports/export.$VOL.conf" |\
+                EXPORT_ID=$(grep '^[[:space:]]*Export_Id' "${GANESHA_DIR}/exports/export.${VOL}.conf" |\
                           awk -F"[=,;]" '{print $2}' | tr -d '[:space:]')
         fi
-        export_add "$VOL"
+        export_add "${VOL}"
 fi
 
 exit 0

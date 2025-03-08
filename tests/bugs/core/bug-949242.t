@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Bug 949242 - Test basic fallocate functionality.
 #

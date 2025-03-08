@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-vagrant up --no-provision $@
+vagrant up --no-provision "$@"
 vagrant provision

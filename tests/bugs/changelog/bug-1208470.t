@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ## Testcase:
 ## Avoid creating any EMPTY changelog(over the changelog rollover time)

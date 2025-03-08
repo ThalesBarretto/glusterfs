@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Script to copy the pem keys from the user's home directory
 # to $GLUSTERD_WORKDIR/geo-replication and then copy

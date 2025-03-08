@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #Make sure glusterd and the brick processes are running on all nodes in the
 #cluster.

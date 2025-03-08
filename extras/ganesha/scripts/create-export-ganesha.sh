@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #This script is called by glusterd when the user
 #tries to export a volume via NFS-Ganesha.
@@ -30,8 +30,8 @@ function check_cmd_status()
 {
         if [ "$1" != "0" ]
                  then
-                 rm -rf $GANESHA_DIR/exports/export.$VOL.conf
-                 sed -i /$VOL.conf/d $CONF
+                 rm -rf "${GANESHA_DIR}"/exports/export."${VOL}".conf
+                 sed -i /"${VOL}".conf/d "${CONF}"
                  exit 1
         fi
 }
@@ -39,8 +39,8 @@ function check_cmd_status()
 
 if [ ! -d "$GANESHA_DIR/exports" ];
         then
-        mkdir $GANESHA_DIR/exports
-        check_cmd_status `echo $?`
+        mkdir "${GANESHA_DIR}"/exports
+    check_cmd_status "$(echo $?)"
 fi
 
 function write_conf()
@@ -51,16 +51,16 @@ echo -e "# WARNING : Using Gluster CLI will overwrite manual
 
 echo "EXPORT{"
 echo "      Export_Id = 2;"
-echo "      Path = \"/$VOL\";"
+echo "      Path = \"/${VOL}\";"
 echo "      FSAL {"
 echo "           name = "GLUSTER";"
 echo "           hostname=\"localhost\";"
-echo  "          volume=\"$VOL\";"
+echo  "          volume=\"${VOL}\";"
 echo "           }"
 echo "      Access_type = RW;"
 echo "      Disable_ACL = true;"
 echo '      Squash="No_root_squash";'
-echo "      Pseudo=\"/$VOL\";"
+echo "      Pseudo=\"/${VOL}\";"
 echo '      Protocols = "3", "4" ;'
 echo '      Transports = "UDP","TCP";'
 echo '      SecType = "sys";'
@@ -69,24 +69,24 @@ echo "     }"
 }
 if [ "$OPTION" = "on" ];
 then
-        if ! (cat $CONF | grep  $VOL.conf\"$ )
+        if ! (cat "${CONF}" | grep  "${VOL}.conf\"$" )
         then
-                write_conf $@ > $GANESHA_DIR/exports/export.$VOL.conf
-                echo "%include \"$GANESHA_DIR/exports/export.$VOL.conf\"" >> $CONF
-                count=`ls -l $GANESHA_DIR/exports/*.conf | wc -l`
+                write_conf "$@" > "${GANESHA_DIR}"/exports/export."${VOL}".conf
+                echo "%include \"${GANESHA_DIR}/exports/export.${VOL}.conf\"" >> "${CONF}"
+                count=$(ls -l $GANESHA_DIR/exports/*.conf | wc -l)
                 if [ "$count" = "1" ] ; then
                         EXPORT_ID=2
                 else
-                        EXPORT_ID=`cat $GANESHA_DIR/.export_added`
-                        check_cmd_status `echo $?`
-                        EXPORT_ID=EXPORT_ID+1
+            EXPORT_ID=$(cat "${GANESHA_DIR}"/.export_added)
+            check_cmd_status "$(echo $?)"
+            EXPORT_ID=$((EXPORT_ID+1))
                         sed -i s/Export_Id.*/"Export_Id= $EXPORT_ID ;"/ \
-                        $GANESHA_DIR/exports/export.$VOL.conf
-                        check_cmd_status `echo $?`
+                        "${GANESHA_DIR}/exports/export.${VOL}.conf"
+                        check_cmd_status "$(echo $?)"
                 fi
-                echo $EXPORT_ID > $GANESHA_DIR/.export_added
+                echo "${EXPORT_ID}" > "${GANESHA_DIR}/.export_added"
         fi
 else
-        rm -rf $GANESHA_DIR/exports/export.$VOL.conf
-        sed -i /$VOL.conf/d $CONF
+        rm -rf "${GANESHA_DIR}/exports/export.${VOL}.conf"
+        sed -i "/${VOL}.conf/d" "${CONF}"
 fi

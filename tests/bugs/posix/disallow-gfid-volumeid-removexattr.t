@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #This test checks that gfid/volume-id removexattrs are not allowed.
 . $(dirname $0)/../../include.rc

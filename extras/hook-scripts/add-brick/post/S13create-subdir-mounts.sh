@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ##---------------------------------------------------------------------------
 ## This script runs the self-heal of the directories which are expected to
 ## be present as they are mounted as subdirectory mounts.
 ##---------------------------------------------------------------------------
 
-MOUNT_DIR=`mktemp -d -t ${0##*/}.XXXXXX`;
+MOUNT_DIR=$(mktemp -d -t ${0##*/}.XXXXXX);
 OPTSPEC="volname:,version:,gd-workdir:,volume-op:"
 PROGNAME="add-brick-create-subdir"
 VOL_NAME=test
@@ -13,13 +13,13 @@ GLUSTERD_WORKDIR="/var/lib/glusterd"
 
 cleanup_mountpoint ()
 {
-        umount -f $MOUNT_DIR;
+        umount -f "${MOUNT_DIR}";
         if [ 0 -ne $? ]
         then
                 return $?
         fi
 
-        rmdir $MOUNT_DIR;
+        rmdir "${MOUNT_DIR}";
         if [ 0 -ne $? ]
         then
                 return $?
@@ -29,7 +29,7 @@ cleanup_mountpoint ()
 ##------------------------------------------
 ## Parse the arguments
 ##------------------------------------------
-ARGS=$(getopt -l $OPTSPEC  -name $PROGNAME $@)
+ARGS=$(getopt -l $OPTSPEC  -name $PROGNAME "$@")
 eval set -- "$ARGS"
 
 while true;
@@ -58,17 +58,17 @@ do
 done
 
 ## See if we have any subdirs to be healed before going further
-subdirs=$(grep 'auth.allow' ${GLUSTERD_WORKDIR}/vols/${VOL_NAME}/info | cut -f2 -d'=' | tr ',' '\n' | cut -f1 -d'(');
+subdirs=$(grep 'auth.allow' "${GLUSTERD_WORKDIR}"/vols/"${VOL_NAME}"/info | cut -f2 -d'=' | tr ',' '\n' | cut -f1 -d'(');
 
-if [ -z ${subdirs} ]; then
-    rmdir $MOUNT_DIR;
+if [ -z "${subdirs}" ]; then
+    rmdir "${MOUNT_DIR}";
     exit 0;
 fi
 
 ##----------------------------------------
 ## Mount the volume in temp directory.
 ## -----------------------------------
-glusterfs -s localhost --volfile-id=$VOL_NAME --client-pid=-50 $MOUNT_DIR;
+glusterfs -s localhost --volfile-id="${VOL_NAME}" --client-pid=-50 "${MOUNT_DIR}";
 if [ 0 -ne $? ]
 then
     exit $?;
@@ -79,7 +79,7 @@ fi
 # list from 'auth.allow' option and only stat them.
 for subdir in ${subdirs}
 do
-    stat ${MOUNT_DIR}/${subdir} > /dev/null;
+    stat "${MOUNT_DIR}"/"${subdir}" > /dev/null;
 done
 
 ## Clean up and exit

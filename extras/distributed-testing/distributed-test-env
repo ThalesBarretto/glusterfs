@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 SMOKE_TESTS="\
     tests/basic/*.t\
