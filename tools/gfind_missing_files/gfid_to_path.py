@@ -54,8 +54,8 @@ def find_path_from_changelog(fd, gfid):
     """
     content = fd.read()
 
-    pattern = "E%s" % gfid
-    pattern += "\x00(3|23)\x00\d+\x00\d+\x00\d+\x00([^\x00]+)/([^\x00]+)"
+    pattern = r"E%s" % gfid
+    pattern += r"\x00(3|23)\x00\d+\x00\d+\x00\d+\x00([^\x00]+)/([^\x00]+)"
     pat = re.compile(pattern)
     match = pat.search(content)
 

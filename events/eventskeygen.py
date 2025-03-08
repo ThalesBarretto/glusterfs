@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+"""Events eventskeygen."""
 #
 #  Copyright (c) 2016 Red Hat, Inc. <http://www.redhat.com>
 #  This file is part of GlusterFS.
@@ -22,7 +23,7 @@ gen_header_type = sys.argv[1]
 # When adding new keys add it to the END
 keys = (
     # user driven events
-    #peer and volume management events
+    # peer and volume management events
     "EVENT_PEER_ATTACH",
     "EVENT_PEER_DETACH",
     "EVENT_VOLUME_CREATE",
@@ -35,7 +36,7 @@ keys = (
     "EVENT_BRICK_RESET_COMMIT",
     "EVENT_BRICK_REPLACE",
 
-    #geo-rep events
+    # geo-rep events
     "EVENT_GEOREP_CREATE",
     "EVENT_GEOREP_START",
     "EVENT_GEOREP_STOP",
@@ -45,7 +46,7 @@ keys = (
     "EVENT_GEOREP_CONFIG_SET",
     "EVENT_GEOREP_CONFIG_RESET",
 
-    #bitrot events
+    # bitrot events
     "EVENT_BITROT_ENABLE",
     "EVENT_BITROT_DISABLE",
     "EVENT_BITROT_SCRUB_THROTTLE",
@@ -53,7 +54,7 @@ keys = (
     "EVENT_BITROT_SCRUB_OPTION",
     "EVENT_BITROT_SCRUB_ONDEMAND",
 
-    #quota events
+    # quota events
     "EVENT_QUOTA_ENABLE",
     "EVENT_QUOTA_DISABLE",
     "EVENT_QUOTA_SET_USAGE_LIMIT",
@@ -65,7 +66,7 @@ keys = (
     "EVENT_QUOTA_HARD_TIMEOUT",
     "EVENT_QUOTA_DEFAULT_SOFT_LIMIT",
 
-    #snapshot events
+    # snapshot events
     "EVENT_SNAPSHOT_CREATED",
     "EVENT_SNAPSHOT_CREATE_FAILED",
     "EVENT_SNAPSHOT_ACTIVATED",
@@ -95,8 +96,8 @@ keys = (
     "EVENT_SNAPSHOT_SCHEDULER_SCHEDULE_DELETED",
     "EVENT_SNAPSHOT_SCHEDULER_SCHEDULE_DELETE_FAILED",
 
-    #async events
-    #glusterd events
+    # async events
+    # glusterd events
     "EVENT_SVC_MANAGER_FAILED",
     "EVENT_SVC_RECONFIGURE_FAILED",
     "EVENT_SVC_CONNECTED",
@@ -123,38 +124,38 @@ keys = (
     "EVENT_IMPORT_BRICK_FAILED",
     "EVENT_COMPARE_FRIEND_VOLUME_FAILED",
     "EVENT_NFS_GANESHA_EXPORT_FAILED",
-    #ec events
+    # ec events
     "EVENT_EC_MIN_BRICKS_NOT_UP",
     "EVENT_EC_MIN_BRICKS_UP",
-    #georep async events
+    # georep async events
     "EVENT_GEOREP_FAULTY",
     "EVENT_GEOREP_CHECKPOINT_COMPLETED",
     "EVENT_GEOREP_ACTIVE",
     "EVENT_GEOREP_PASSIVE",
 
-    #quota async events
+    # quota async events
     "EVENT_QUOTA_CROSSED_SOFT_LIMIT",
-    #bitrot async events
+    # bitrot async events
     "EVENT_BITROT_BAD_FILE",
-    #protocol-server events
+    # protocol-server events
     "EVENT_CLIENT_CONNECT",
     "EVENT_CLIENT_AUTH_REJECT",
     "EVENT_CLIENT_DISCONNECT",
-    #posix events
+    # posix events
     "EVENT_POSIX_SAME_GFID",
     "EVENT_POSIX_ALREADY_PART_OF_VOLUME",
     "EVENT_POSIX_BRICK_NOT_IN_VOLUME",
     "EVENT_POSIX_BRICK_VERIFICATION_FAILED",
     "EVENT_POSIX_ACL_NOT_SUPPORTED",
     "EVENT_POSIX_HEALTH_CHECK_FAILED",
-    #afr events
+    # afr events
     "EVENT_AFR_QUORUM_MET",
     "EVENT_AFR_QUORUM_FAIL",
     "EVENT_AFR_SUBVOL_UP",
     "EVENT_AFR_SUBVOLS_DOWN",
     "EVENT_AFR_SPLIT_BRAIN",
 
-    #tier events
+    # tier events
     "EVENT_TIER_ATTACH",
     "EVENT_TIER_ATTACH_FORCE",
     "EVENT_TIER_DETACH_START",
@@ -168,8 +169,8 @@ keys = (
     "EVENT_TIER_WATERMARK_RAISED_TO_MID",
     "EVENT_TIER_WATERMARK_DROPPED_TO_LOW",
 
-    #dht events
-    #add/remove brick events
+    # dht events
+    # add/remove brick events
     "EVENT_VOLUME_ADD_BRICK",
     "EVENT_VOLUME_ADD_BRICK_FAILED",
     "EVENT_VOLUME_REMOVE_BRICK_START",
@@ -182,17 +183,17 @@ keys = (
     "EVENT_VOLUME_REMOVE_BRICK_FORCE_FAILED",
     "EVENT_VOLUME_REMOVE_BRICK_FAILED",
 
-    #rebalance events
+    # rebalance events
     "EVENT_VOLUME_REBALANCE_START",
     "EVENT_VOLUME_REBALANCE_STOP",
     "EVENT_VOLUME_REBALANCE_FAILED",
     "EVENT_VOLUME_REBALANCE_COMPLETE",
 
-    #tier events
+    # tier events
     "EVENT_TIER_START",
     "EVENT_TIER_START_FORCE",
 
-    #brick/inodes events
+    # brick/inodes events
     "EVENT_DHT_DISK_USAGE",
     "EVENT_DHT_INODES_USAGE",
 )

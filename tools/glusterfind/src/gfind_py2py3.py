@@ -30,12 +30,12 @@ if sys.version_info >= (3,):
     def gfind_history_changelog(libgfc, changelog_path, start, end, num_parallel,
                                 actual_end):
         return libgfc.gf_history_changelog(changelog_path.encode(), start, end, num_parallel,
-                       actual_end)
+                                           actual_end)
 
     def gfind_changelog_register(libgfc, brick, path, log_file, log_level,
                                  retries):
         return libgfc.gf_changelog_register(brick.encode(), path.encode(), log_file.encode(),
-                       log_level, retries)
+                                            log_level, retries)
 
     def gfind_history_changelog_done(libgfc, clfile):
         return libgfc.gf_history_changelog_done(clfile.encode())
@@ -65,12 +65,12 @@ else:
     def gfind_history_changelog(libgfc, changelog_path, start, end, num_parallel,
                                 actual_end):
         return libgfc.gf_history_changelog(changelog_path, start, end,
-                                                    num_parallel, actual_end)
+                                           num_parallel, actual_end)
 
     def gfind_changelog_register(libgfc, brick, path, log_file, log_level,
                                  retries):
         return libgfc.gf_changelog_register(brick, path, log_file,
-                                                     log_level, retries)
+                                            log_level, retries)
 
     def gfind_history_changelog_done(libgfc, clfile):
         return libgfc.gf_history_changelog_done(clfile)

@@ -9,27 +9,27 @@
 # later), or the GNU General Public License, version 2 (GPLv2), in all
 # cases as published by the Free Software Foundation.
 
-import sys
-from errno import ENOENT, ENOTEMPTY
-import time
-from multiprocessing import Process
-import os
-import xml.etree.cElementTree as etree
-from argparse import ArgumentParser, RawDescriptionHelpFormatter, Action
-from gfind_py2py3 import gfind_write_row, gfind_write
-import logging
-import shutil
-import tempfile
-import signal
-from datetime import datetime
 import codecs
+import logging
+import os
 import re
+import shutil
+import signal
+import sys
+import tempfile
+import time
+import xml.etree.cElementTree as etree
+from argparse import Action, ArgumentParser, RawDescriptionHelpFormatter
+from datetime import datetime
+from errno import ENOENT, ENOTEMPTY
+from multiprocessing import Process
 
-from utils import execute, is_host_local, mkdirp, fail
-from utils import setup_logger, human_time, handle_rm_error
-from utils import get_changelog_rollover_time, cache_output, create_file
 import conf
 from changelogdata import OutputMerger
+from gfind_py2py3 import gfind_write, gfind_write_row
+from utils import execute, fail, is_host_local, mkdirp
+from utils import setup_logger, human_time, handle_rm_error
+from utils import get_changelog_rollover_time, cache_output, create_file
 
 PROG_DESCRIPTION = """
 GlusterFS Incremental API
@@ -58,9 +58,7 @@ def get_pem_key_path(session, volume):
 
 
 def node_cmd(host, host_uuid, task, cmd, args, opts):
-    """
-    Runs command via ssh if host is not local
-    """
+    """Run commands via ssh if host is not local."""
     try:
         localdir = is_host_local(host_uuid)
 
@@ -281,7 +279,8 @@ def run_cmd_nodes(task, args, **kwargs):
 
 @cache_output
 def get_nodes(volume):
-    """
+    """Get gluster volume info.
+
     Get the gluster volume info xml output and parse to get
     the brick details.
     """
@@ -516,10 +515,12 @@ def write_output(outfile, outfilemerger, field_separator):
                     continue
 
                 if row_2_rep and row_2_rep != "":
-                    gfind_write_row(f, row[0], field_separator, p_rep, row_2_rep)
+                    gfind_write_row(f, row[0],
+                                    field_separator, p_rep, row_2_rep)
 
                 else:
                     gfind_write(f, row[0], field_separator, p_rep)
+
 
 def validate_volume(volume):
     cmd = ["gluster", 'volume', 'info', volume, "--xml"]
@@ -533,6 +534,7 @@ def validate_volume(volume):
         fail("Invalid Volume: Check the Volume name! %s" % e)
     if statusStr != "Started":
         fail("Volume %s is not online" % volume)
+
 
 # The rules for a valid session name.
 SESSION_NAME_RULES = {
@@ -548,17 +550,17 @@ def validate_session_name(session):
     # Check for minimum length
     if len(session) < SESSION_NAME_RULES['min_length']:
         fail('session_name must be at least ' +
-                 str(SESSION_NAME_RULES['min_length']) + ' characters long.')
+             str(SESSION_NAME_RULES['min_length']) + ' characters long.')
     # Check for maximum length
     if len(session) > SESSION_NAME_RULES['max_length']:
         fail('session_name must not exceed ' +
-                 str(SESSION_NAME_RULES['max_length']) + ' characters length.')
+             str(SESSION_NAME_RULES['max_length']) + ' characters length.')
 
     # Matches strings composed entirely of characters specified within
     if not re.match(r'^[' + SESSION_NAME_RULES['valid_chars'] +
-                        ']+$', session):
+                    ']+$', session):
         fail('Session name can only contain these characters: ' +
-                         SESSION_NAME_RULES['valid_chars'])
+             SESSION_NAME_RULES['valid_chars'])
 
 
 def mode_create(session_dir, args):
@@ -760,7 +762,8 @@ def mode_pre(session_dir, args):
 
 
 def mode_post(session_dir, args):
-    """
+    """Post.
+
     If pre session file exists, overwrite session file
     If pre session file does not exists, return ERROR
     """
@@ -797,7 +800,8 @@ def mode_delete(session_dir, args):
 
 
 def mode_list(session_dir, args):
-    """
+    """List available sessions.
+
     List available sessions to stdout, if session name is set
     only list that session.
     """
@@ -882,7 +886,6 @@ def main():
         # volume involved, validate the volume first
         if args.mode not in ["list"]:
             validate_volume(args.volume)
-
 
         # "default" is a system defined session name
         if args.mode in ["create", "post", "pre", "delete"] and \

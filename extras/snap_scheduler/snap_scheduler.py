@@ -9,17 +9,19 @@
 # cases as published by the Free Software Foundation.
 
 from __future__ import print_function
-import subprocess
-import os
-import os.path
-import logging
 import argparse
 import fcntl
+import logging
 import logging.handlers
-import sys
+import os
+import os.path
 import shutil
+import subprocess
+import sys
 from errno import EEXIST
+
 from conf import GLUSTERFS_LIBEXECDIR
+
 sys.path.insert(1, GLUSTERFS_LIBEXECDIR)
 
 EVENTS_ENABLED = True
@@ -67,7 +69,7 @@ except ImportError:
 SCRIPT_NAME = "snap_scheduler"
 scheduler_enabled = False
 log = logging.getLogger(SCRIPT_NAME)
-SHARED_STORAGE_DIR="/run/gluster/shared_storage"
+SHARED_STORAGE_DIR = "/run/gluster/shared_storage"
 GCRON_DISABLED = SHARED_STORAGE_DIR+"/snaps/gcron_disabled"
 GCRON_ENABLED = SHARED_STORAGE_DIR+"/snaps/gcron_enabled"
 GCRON_TASKS = SHARED_STORAGE_DIR+"/snaps/glusterfs_snap_cron_tasks"
@@ -98,7 +100,8 @@ INVALID_SCHEDULE = 15
 INVALID_ARG = 16
 VOLUME_DOES_NOT_EXIST = 17
 
-def print_error (error_num):
+
+def print_error(error_num):
     if error_num == INTERNAL_ERROR:
         return "Internal Error"
     elif error_num == SHARED_STORAGE_DIR_DOESNT_EXIST:
@@ -133,6 +136,7 @@ def print_error (error_num):
         return "The argument is invalid."
     elif error_num == VOLUME_DOES_NOT_EXIST:
         return "The volume does not exist."
+
 
 def output(msg):
     print("%s: %s" % (SCRIPT_NAME, msg))
@@ -177,6 +181,7 @@ def scheduler_status():
                   "Failed to check the status of %s.", GCRON_DISABLED)
 
     return ret
+
 
 def enable_scheduler():
     ret = scheduler_status()
@@ -388,6 +393,7 @@ def write_tasks_to_file():
 
     return ret
 
+
 def update_current_scheduler(data):
     try:
         with open(TMP_FILE, "w", 0o644) as f:
@@ -429,7 +435,7 @@ def isVolumePresent(volname):
         log.error("Command output:")
         log.error(err)
     else:
-        success = True;
+        success = True
 
     return success
 
@@ -547,6 +553,7 @@ def edit_schedules(jobname, schedule, volname):
 
     return ret
 
+
 def get_bool_val():
     getsebool_cli = ["getsebool",
                      "-a"]
@@ -573,6 +580,7 @@ def get_bool_val():
 
     return bool_val
 
+
 def get_selinux_status():
     getenforce_cli = ["getenforce"]
     log.debug("Running command '%s'", " ".join(getenforce_cli))
@@ -581,8 +589,7 @@ def get_selinux_status():
         p1 = subprocess.Popen(getenforce_cli, stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE)
     except OSError as oserr:
-        log.error("Failed to run the command \"getenforce\". Error: %s" %\
-                  oserr)
+        log.error("Failed to run the command \"getenforce\". Error: %s" % oserr)
         return -1
 
     output, err = p1.communicate()
@@ -593,10 +600,11 @@ def get_selinux_status():
         log.error(err)
         return -1
     else:
-        selinux_status=output.rstrip()
+        selinux_status = output.rstrip()
         log.debug("selinux status: %s", selinux_status)
 
     return selinux_status
+
 
 def set_cronjob_user_share():
     selinux_status = get_selinux_status()
@@ -637,6 +645,7 @@ def set_cronjob_user_share():
         # we return a failure here
         return -1
 
+
 def initialise_scheduler():
     ret = set_cronjob_user_share()
     if ret:
@@ -675,7 +684,7 @@ def initialise_scheduler():
 
     log.info("Successfully initialised snapshot scheduler for this node")
     output("Successfully initialised snapshot scheduler for this node")
-    gf_event (EVENT_SNAPSHOT_SCHEDULER_INITIALISED, status="Success")
+    gf_event(EVENT_SNAPSHOT_SCHEDULER_INITIALISED, status="Success")
 
     ret = 0
     return ret
@@ -687,25 +696,25 @@ def syntax_checker(args):
             output("Invalid Jobname. Jobname should not be empty and should not contain \" \" character.")
             ret = INVALID_JOBNAME
             return ret
-        args.jobname=args.jobname.strip()
+        args.jobname = args.jobname.strip()
 
     if hasattr(args, 'volname'):
         if (len(args.volname.split()) != 1):
             output("Invalid Volname. Volname should not be empty and should not contain \" \" character.")
             ret = INVALID_VOLNAME
             return ret
-        args.volname=args.volname.strip()
+        args.volname = args.volname.strip()
 
     if hasattr(args, 'schedule'):
         if (len(args.schedule.split()) != 5):
             output("Invalid Schedule. Please refer to the following for adding a valid cron schedule")
-            print ("* * * * *")
-            print ("| | | | |")
-            print ("| | | | +---- Day of the Week   (range: 1-7, 1 standing for Monday)")
-            print ("| | | +------ Month of the Year (range: 1-12)")
-            print ("| | +-------- Day of the Month  (range: 1-31)")
-            print ("| +---------- Hour              (range: 0-23)")
-            print ("+------------ Minute            (range: 0-59)")
+            print("* * * * *")
+            print("| | | | |")
+            print("| | | | +---- Day of the Week   (range: 1-7, 1 standing for Monday)")
+            print("| | | +------ Month of the Year (range: 1-12)")
+            print("| | +-------- Day of the Month  (range: 1-31)")
+            print("| +---------- Hour              (range: 0-23)")
+            print("+------------ Minute            (range: 0-59)")
             ret = INVALID_SCHEDULE
             return ret
 
@@ -722,8 +731,8 @@ def perform_operation(args):
         ret = initialise_scheduler()
         if ret != 0:
             output("Failed to initialise snapshot scheduling")
-            gf_event (EVENT_SNAPSHOT_SCHEDULER_INIT_FAILED,
-                      error=print_error(ret))
+            gf_event(EVENT_SNAPSHOT_SCHEDULER_INIT_FAILED,
+                     error=print_error(ret))
         return ret
 
     # Disable snapshot scheduler
@@ -731,17 +740,17 @@ def perform_operation(args):
         ret = disable_scheduler()
         if ret == 0:
             subprocess.Popen(["touch", "-h", GCRON_TASKS])
-            gf_event (EVENT_SNAPSHOT_SCHEDULER_DISABLED,
-                      status="Successfully Disabled")
+            gf_event(EVENT_SNAPSHOT_SCHEDULER_DISABLED,
+                     status="Successfully Disabled")
         else:
-            gf_event (EVENT_SNAPSHOT_SCHEDULER_DISABLE_FAILED,
-                      error=print_error(ret))
+            gf_event(EVENT_SNAPSHOT_SCHEDULER_DISABLE_FAILED,
+                     error=print_error(ret))
         return ret
 
     # Check if the symlink to GCRON_TASKS is properly set in the shared storage
     if (not os.path.lexists(GCRON_UPDATE_TASK) or
-        not os.path.lexists(GCRON_CROND_TASK) or
-        os.readlink(GCRON_CROND_TASK) != GCRON_TASKS):
+       not os.path.lexists(GCRON_CROND_TASK) or
+       os.readlink(GCRON_CROND_TASK) != GCRON_TASKS):
         print_str = ("Please run 'snap_scheduler.py' init to initialise "
                      "the snap scheduler for the local node.")
         log.error(print_str)
@@ -766,11 +775,11 @@ def perform_operation(args):
         ret = enable_scheduler()
         if ret == 0:
             subprocess.Popen(["touch", "-h", GCRON_TASKS])
-            gf_event (EVENT_SNAPSHOT_SCHEDULER_ENABLED,
-                      status="Successfully Enabled")
+            gf_event(EVENT_SNAPSHOT_SCHEDULER_ENABLED,
+                     status="Successfully Enabled")
         else:
-            gf_event (EVENT_SNAPSHOT_SCHEDULER_ENABLE_FAILED,
-                      error=print_error(ret))
+            gf_event(EVENT_SNAPSHOT_SCHEDULER_ENABLE_FAILED,
+                     error=print_error(ret))
         return ret
 
     # Disable snapshot scheduler
@@ -778,11 +787,11 @@ def perform_operation(args):
         ret = disable_scheduler()
         if ret == 0:
             subprocess.Popen(["touch", "-h", GCRON_TASKS])
-            gf_event (EVENT_SNAPSHOT_SCHEDULER_DISABLED,
-                      status="Successfully Disabled")
+            gf_event(EVENT_SNAPSHOT_SCHEDULER_DISABLED,
+                     status="Successfully Disabled")
         else:
-            gf_event (EVENT_SNAPSHOT_SCHEDULER_DISABLE_FAILED,
-                      error=print_error(ret))
+            gf_event(EVENT_SNAPSHOT_SCHEDULER_DISABLE_FAILED,
+                     error=print_error(ret))
         return ret
 
     # List snapshot schedules
@@ -798,12 +807,12 @@ def perform_operation(args):
         ret = add_schedules(args.jobname, args.schedule, args.volname)
         if ret == 0:
             subprocess.Popen(["touch", "-h", GCRON_TASKS])
-            gf_event (EVENT_SNAPSHOT_SCHEDULER_SCHEDULE_ADDED,
-                      status="Successfully added job "+args.jobname)
+            gf_event(EVENT_SNAPSHOT_SCHEDULER_SCHEDULE_ADDED,
+                     status="Successfully added job "+args.jobname)
         else:
-            gf_event (EVENT_SNAPSHOT_SCHEDULER_SCHEDULE_ADD_FAILED,
-                      status="Failed to add job "+args.jobname,
-                      error=print_error(ret))
+            gf_event(EVENT_SNAPSHOT_SCHEDULER_SCHEDULE_ADD_FAILED,
+                     status="Failed to add job "+args.jobname,
+                     error=print_error(ret))
         return ret
 
     # Delete snapshot schedules
@@ -814,12 +823,12 @@ def perform_operation(args):
         ret = delete_schedules(args.jobname)
         if ret == 0:
             subprocess.Popen(["touch", "-h", GCRON_TASKS])
-            gf_event (EVENT_SNAPSHOT_SCHEDULER_SCHEDULE_DELETED,
-                      status="Successfully deleted job "+args.jobname)
+            gf_event(EVENT_SNAPSHOT_SCHEDULER_SCHEDULE_DELETED,
+                     status="Successfully deleted job "+args.jobname)
         else:
-            gf_event (EVENT_SNAPSHOT_SCHEDULER_SCHEDULE_DELETE_FAILED,
-                      status="Failed to delete job "+args.jobname,
-                      error=print_error(ret))
+            gf_event(EVENT_SNAPSHOT_SCHEDULER_SCHEDULE_DELETE_FAILED,
+                     status="Failed to delete job "+args.jobname,
+                     error=print_error(ret))
         return ret
 
     # Edit snapshot schedules
@@ -830,16 +839,17 @@ def perform_operation(args):
         ret = edit_schedules(args.jobname, args.schedule, args.volname)
         if ret == 0:
             subprocess.Popen(["touch", "-h", GCRON_TASKS])
-            gf_event (EVENT_SNAPSHOT_SCHEDULER_SCHEDULE_EDITED,
-                      status="Successfully edited job "+args.jobname)
+            gf_event(EVENT_SNAPSHOT_SCHEDULER_SCHEDULE_EDITED,
+                     status="Successfully edited job "+args.jobname)
         else:
-            gf_event (EVENT_SNAPSHOT_SCHEDULER_SCHEDULE_EDIT_FAILED,
-                      status="Failed to edit job "+args.jobname,
-                      error=print_error(ret))
+            gf_event(EVENT_SNAPSHOT_SCHEDULER_SCHEDULE_EDIT_FAILED,
+                     status="Failed to edit job "+args.jobname,
+                     error=print_error(ret))
         return ret
 
     ret = INVALID_ARG
     return ret
+
 
 def gf_event(event_type, **kwargs):
     if EVENTS_ENABLED:
@@ -853,8 +863,8 @@ def main(argv):
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="action",
                                        metavar=('{init, status, enable,'
-                                               ' disable, list, add,'
-                                               ' delete, edit}'))
+                                                ' disable, list, add,'
+                                                ' delete, edit}'))
     subparsers.add_parser('init',
                           help="Initialise the node for snapshot scheduling")
 

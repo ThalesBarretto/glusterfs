@@ -20,6 +20,7 @@ utime_ops = ['fallocate', 'zerofill', 'opendir', 'mknod', 'mkdir',
              'ftruncate', 'create', 'open', 'removexattr', 'fremovexattr',
              'readv', 'writev', 'setattr', 'fsetattr', 'copy_file_range']
 
+
 def gen_defaults():
     for name, value in ops.items():
         if name in utime_ops:

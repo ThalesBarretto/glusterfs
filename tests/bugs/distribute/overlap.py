@@ -1,21 +1,27 @@
+"""Test bugs distribute overlap."""
 
 from __future__ import print_function
+
 import sys
 
-def calculate_one (ov, nv):
+
+def calculate_one(ov, nv):
+    """Test for one overlapping region."""
     old_start = int(ov[18:26], 16)
     old_end = int(ov[26:34], 16)
     new_start = int(nv[18:26], 16)
     new_end = int(nv[26:34], 16)
     if (new_end < old_start) or (new_start > old_end):
-        #print '%s, %s -> ZERO' % (ov, nv)
+        # print '%s, %s -> ZERO' % (ov, nv)
         return 0
     all_start = max(old_start, new_start)
     all_end = min(old_end, new_end)
-    #print '%s, %s -> %08x' % (ov, nv, all_end - all_start + 1)
+    # print '%s, %s -> %08x' % (ov, nv, all_end - all_start + 1)
     return all_end - all_start + 1
 
-def calculate_all (values):
+
+def calculate_all(values):
+    """Test for all overlapping region."""
     total = 0
     nv_index = len(values) // 2
     for old_val in values[:nv_index]:
@@ -23,6 +29,7 @@ def calculate_all (values):
         nv_index += 1
         total += calculate_one(old_val, new_val)
     return total
+
 
 """
 test1_vals = [

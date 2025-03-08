@@ -1,11 +1,13 @@
-
+"""Test utils for setfattr."""
 import os
 import sys
 from optparse import OptionParser
 
 import xattr
 
+
 def convert(string):
+    """Decode strings from base64 or hex."""
     tmp_string = string
     if (string[0] == '0' and
         (string[1] == 's' or
@@ -24,6 +26,7 @@ def convert(string):
         return tmp_string[1].decode('hex')
 
     return tmp_string
+
 
 if __name__ == '__main__':
     usage = "usage: %prog [-n name] [-v value] [-x name]"
@@ -47,18 +50,18 @@ if __name__ == '__main__':
 
     (option, args) = parser.parse_args()
     if not args:
-        print ("Usage: setfattr {-n name} [-v value] file...")
-        print ("       setfattr {-x name} file...")
-        print ("Try `setfattr --help' for more information.")
+        print("Usage: setfattr {-n name} [-v value] file...")
+        print("       setfattr {-x name} file...")
+        print("Try `setfattr --help' for more information.")
         sys.exit(1)
 
     if option.name and option.xname:
-        print ("-n and -x are mutually exclusive...")
+        print("-n and -x are mutually exclusive...")
         sys.exit(1)
 
     if option.name:
         if option.value is None:
-            print ("-n option requires -v value...")
+            print("-n option requires -v value...")
 
     args[0] = os.path.abspath(args[0])
 
@@ -66,12 +69,12 @@ if __name__ == '__main__':
         try:
             xattr.setxattr(args[0], option.name, convert(option.value))
         except Exception as err:
-            print (err)
+            print(err)
             sys.exit(1)
 
     if option.xname:
         try:
             xattr.removexattr(args[0], option.xname)
         except Exception as err:
-            print (err)
+            print(err)
             sys.exit(1)

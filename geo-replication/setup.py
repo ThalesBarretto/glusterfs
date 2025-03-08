@@ -8,7 +8,8 @@
 # cases as published by the Free Software Foundation.
 #
 
-"""
+"""Geo-replication setup.
+
 This setup.py only used to run tests, since geo-replication will
 be installed in /usr/local/libexec/glusterfs or /usr/libexec/glusterfs
 """

@@ -1,35 +1,43 @@
+"""Test utils getfattr."""
 
 from __future__ import print_function
+
 import os
 import sys
 from optparse import OptionParser
 
 import xattr
 
+
 def handle_textencoding(attr):
-    ### required for Python's handling of NULL strings.
+    """Fix null strings."""
+    # required for Python's handling of NULL strings.
     attr_null_replace = (attr.encode('hex').decode('hex')).replace('\x00',
                                                                    '\\000')
     return attr_null_replace
 
+
 def getfattr(path, option):
+    """Get file extended attributes (xattr)."""
     attr = xattr.getxattr(path, option.name)
     encoded_attr = attr
 
     if option.encoding == "text":
-        ## special case handle it.
+        # special case handle it.
         encoded_attr = handle_textencoding(attr)
     else:
         encoded_attr = attr.encode(option.encoding)
 
     if option.onlyvalues:
-        print (encoded_attr)
+        print(encoded_attr)
         return
 
-    print_getfattr (path, option, encoded_attr)
+    print_getfattr(path, option, encoded_attr)
     return
 
-def print_getfattr (path, option, encoded_attr=None):
+
+def print_getfattr(path, option, encoded_attr=None):
+    """Print file extended attributes (xattr)."""
     if encoded_attr:
         if option.encoding == "hex":
             print(("%s=0x%s" % (option.name, encoded_attr)))
@@ -42,12 +50,15 @@ def print_getfattr (path, option, encoded_attr=None):
 
     return
 
-def print_header (path, absnames):
+
+def print_header(path, absnames):
+    """Print informative header."""
     if absnames:
         print(("# file: %s" % path))
     else:
-        print ("getfattr: Removing leading '/' from absolute path names")
+        print("getfattr: Removing leading '/' from absolute path names")
         print(("# file: %s" % path[1:]))
+
 
 if __name__ == '__main__':
     usage = "usage: %prog [-n name|-d] [-e en] [-m pattern] path...."
@@ -82,17 +93,17 @@ if __name__ == '__main__':
 
     (option, args) = parser.parse_args()
     if not args:
-        print ("Usage: getfattr [-hRLP] [-n name|-d] [-e en] [-m pattern]"
-               " path...")
-        print ("Try `getfattr --help' for more information.")
+        print("Usage: getfattr [-hRLP] [-n name|-d] [-e en] [-m pattern]"
+              " path...")
+        print("Try `getfattr --help' for more information.")
         sys.exit(1)
 
     if option.dump and option.name:
-        print ("-d and -n are mutually exclusive...")
+        print("-d and -n are mutually exclusive...")
         sys.exit(1)
 
     if option.pattern and option.name:
-        print ("-m and -n are mutually exclusive...")
+        print("-m and -n are mutually exclusive...")
         sys.exit(1)
 
     if option.encoding:
@@ -113,7 +124,7 @@ if __name__ == '__main__':
             print(("Invalid key %s" % err))
             sys.exit(1)
         except IOError as err:
-            print (err)
+            print(err)
             sys.exit(1)
 
     if option.pattern:
@@ -129,5 +140,5 @@ if __name__ == '__main__':
                     print_getfattr(args[0], option, None)
 
         except IOError as err:
-            print (err)
+            print(err)
             sys.exit(1)

@@ -1,3 +1,4 @@
+"""Test utils libcxattr."""
 #
 # Copyright (c) 2011-2014 Red Hat, Inc. <http://www.redhat.com>
 # This file is part of GlusterFS.
@@ -11,14 +12,15 @@
 import os
 import sys
 from ctypes import CDLL, c_int
+
 from py2py3 import bytearray_to_str, gr_create_string_buffer
 from py2py3 import gr_query_xattr, gr_lsetxattr, gr_lremovexattr
 
 
 class Xattr(object):
+    """Singleton that wraps the extended attributes system.
 
-    """singleton that wraps the extended attributes system
-       interface for python using ctypes
+    interface for python using ctypes
 
        Just implement it to the degree we need it, in particular
        - we need just the l*xattr variants, ie. we never want symlinks to be
@@ -35,6 +37,7 @@ class Xattr(object):
 
     @classmethod
     def geterrno(cls):
+        """Get errno."""
         if sys.hexversion >= 0x02060000:
             from ctypes import get_errno
             return get_errno()
@@ -43,11 +46,13 @@ class Xattr(object):
 
     @classmethod
     def raise_oserr(cls):
+        """Throws exception over errno."""
         errn = cls.geterrno()
         raise OSError(errn, os.strerror(errn))
 
     @classmethod
     def _query_xattr(cls, path, siz, syscall, *a):
+        """Get file extended attributes (xattr)."""
         if siz:
             buf = gr_create_string_buffer(siz)
         else:
@@ -65,11 +70,15 @@ class Xattr(object):
 
     @classmethod
     def lgetxattr(cls, path, attr, siz=0):
+        """Get file extended attributes (xattr)."""
         return gr_query_xattr(cls, path, siz, 'lgetxattr', attr)
 
     @classmethod
     def lgetxattr_buf(cls, path, attr):
-        """lgetxattr variant with size discovery"""
+        """Get file extended attributes (xattr).
+
+        lgetxattr variant with size discovery
+        """
         size = cls.lgetxattr(path, attr)
         if size == -1:
             cls.raise_oserr()
@@ -79,6 +88,7 @@ class Xattr(object):
 
     @classmethod
     def llistxattr(cls, path, siz=0):
+        """List file extended attributes (xattr)."""
         ret = gr_query_xattr(cls, path, siz, 'llistxattr')
         if isinstance(ret, str):
             ret = ret.strip('\0')
@@ -87,19 +97,24 @@ class Xattr(object):
 
     @classmethod
     def lsetxattr(cls, path, attr, val):
+        """List file extended attributes (xattr)."""
         ret = gr_lsetxattr(cls, path, attr, val)
         if ret == -1:
             cls.raise_oserr()
 
     @classmethod
     def lremovexattr(cls, path, attr):
+        """Remove file extended attributes (xattr)."""
         ret = gr_lremovexattr(cls, path, attr)
         if ret == -1:
             cls.raise_oserr()
 
     @classmethod
     def llistxattr_buf(cls, path):
-        """listxattr variant with size discovery"""
+        """List file extended attributes (xattr).
+
+        listxattr variant with size discovery
+        """
         size = cls.llistxattr(path)
         if size == -1:
             cls.raise_oserr()

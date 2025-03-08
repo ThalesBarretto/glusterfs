@@ -120,6 +120,7 @@ utime_write_op = ['writev']
 utime_setattr_ops = ['setattr', 'fsetattr']
 utime_copy_file_range_ops = ['copy_file_range']
 
+
 def gen_defaults():
     for name in ops:
         if name in utime_ops:
@@ -137,6 +138,7 @@ def gen_defaults():
         if name in utime_copy_file_range_ops:
             print(generate(FOPS_CBK_COMMON_TEMPLATE, name, cbk_subs))
             print(generate(FOPS_COPY_FILE_RANGE_TEMPLATE, name, fop_subs))
+
 
 for l in open(sys.argv[1], 'r').readlines():
     if l.find('#pragma generate') != -1:

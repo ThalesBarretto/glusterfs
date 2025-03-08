@@ -11,64 +11,70 @@
 #
 
 import argparse
-import os
-import errno
-import time
-import sys
 import datetime
+import errno
 import hashlib
 import logging
+import os
+import sys
+import time
+
 
 def size_fmt(num):
-    for unit in ['B','KiB','MiB','GiB','TiB','PiB','EiB','ZiB']:
+    for unit in ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB']:
         if abs(num) < 1024.0:
             return f"{num:7.2f} {unit}"
         num /= 1024.0
     return "f{num:.2f} YiB"
 
+
 def time_fmt(fr_sec):
     return str(datetime.timedelta(seconds=int(fr_sec)))
+
 
 def crawl_progress(count, size):
     sys.stdout.write(f'Building index of {count} files with cumulative size {size} to attempt rebalance.\r')
     sys.stdout.flush()
 
-#https://gist.github.com/vladignatyev/06860ec2040cb497f0f3
+
+# https://gist.github.com/vladignatyev/06860ec2040cb497f0f3
 def progress(count, total, status=''):
     bar_len = 60
     filled_len = int(round(bar_len * count / float(total)))
 
     percents = round(100.0 * count / float(total), 1)
-    bar = '=' * filled_len + '-' * (bar_len - filled_len)
+    bar_str = '=' * filled_len + '-' * (bar_len - filled_len)
 
-    sys.stdout.write(f'[{bar}] {percents}% ...{status}\r')
+    sys.stdout.write(f'[{bar_str}] {percents}% ...{status}\r')
     sys.stdout.flush()
+
 
 def progress_done():
     print()
 
+
 class Rebalancer:
     def __init__(self, path):
-        self.path = path # Path on which migration script is executed
-        self.migration_duration = 0 #Time spent in migrating data
-        self.skipped_migration_duration = 0 #Time spent in migrating data
-        self.migrated_files = 0 #Number of files migrated successfully
-        self.total_files = 0 #Total number of files scanned
-        self.total_size = 0 #Cumulative size of files scanned so far
-        self.expected_total_size = 0 #This is calculated at the time of populating index
-        self.expected_total_files = 0 #This is calculated at the time of populating index
-        self.migrated_size = 0 #Cumulative size of files migrated
+        self.path = path  # Path on which migration script is executed
+        self.migration_duration = 0  # Time spent in migrating data
+        self.skipped_migration_duration = 0  # Time spent in migrating data
+        self.migrated_files = 0  # Number of files migrated successfully
+        self.total_files = 0  # Total number of files scanned
+        self.total_size = 0  # Cumulative size of files scanned so far
+        self.expected_total_size = 0  # This is calculated at the time of populating index
+        self.expected_total_files = 0  # This is calculated at the time of populating index
+        self.migrated_size = 0  # Cumulative size of files migrated
         self.index = self.get_file_name('index')
         self.init_logging()
-        self.rebalance_start = 0 #Start time to be updated in run
+        self.rebalance_start = 0  # Start time to be updated in run
 
     def __enter__(self):
         return self
 
-    #Generate a unique name for the given path. format of the path will be
-    #rebalance-<hiphenated-path>-<first-8-hex-chars-of-md5-digest>.suffix
-    #If the length of this name is > 255 then hiphenated-path is truncated to
-    #make space
+    # Generate a unique name for the given path. format of the path will be
+    # rebalance-<hiphenated-path>-<first-8-hex-chars-of-md5-digest>.suffix
+    # If the length of this name is > 255 then hiphenated-path is truncated to
+    # make space
     def get_file_name(self, suffix):
         name_suffix = hashlib.md5(self.path.encode('utf-8')).hexdigest()[:8]+'.'+suffix
         name_suffix = '-' + name_suffix
@@ -79,26 +85,26 @@ class Rebalancer:
         name += name_suffix
         return name
 
-    #Log format is as follows
-    #2020-10-21 18:24:27.838 INFO /mnt/glusterfs/0/aaaaaaaaaa/1 - 1.0 KiB [1024] - 74.6 KiB/s
+    # Log format is as follows
+    # 2020-10-21 18:24:27.838 INFO /mnt/glusterfs/0/aaaaaaaaaa/1 - 1.0 KiB [1024] - 74.6 KiB/s
     def init_logging(self):
         logging.basicConfig(filename=self.get_file_name('log'), level=logging.DEBUG,
                             format='%(asctime)s.%(msecs)03d %(levelname)s %(message)s',
                             datefmt='%Y-%m-%d %H:%M:%S')
 
-    #Executes the setxattr syscall to trigger migration
+    # Executes the setxattr syscall to trigger migration
     def migrate_data(self, f):
         size_now = 0
         try:
             size_now = os.stat(f).st_size
             os.setxattr(f, "trusted.distribute.migrate-data", b"1",
                         follow_symlinks=False)
-            return True, size_now, None #Indicate that migration happened
+            return True, size_now, None  # Indicate that migration happened
 
         except OSError as e:
             return False, size_now, e
 
-    #Updates the total,migrated,skipped files/size and durations of the migrations
+    # Updates the total,migrated,skipped files/size and durations of the migrations
     def migrate_with_stats(self, f, size):
         migration_start = time.perf_counter()
         result, size_now, err = self.migrate_data(f)
@@ -110,8 +116,8 @@ class Rebalancer:
             if err.errno == errno.EEXIST:
                 logging.info(f"{f} - Not needed")
             elif err.errno == errno.ENOENT:
-                #Account for file deletion
-                #File could be deleted just after stat, so update size_diff again
+                # Account for file deletion
+                # File could be deleted just after stat, so update size_diff again
                 size_diff = -size
                 self.expected_total_files -= 1
                 logging.info(f"{f} - file not present anymore")
@@ -119,7 +125,7 @@ class Rebalancer:
                 logging.critical(f"{f} - {err} - exiting.")
                 raise err
 
-        #Account for size changes between indexing and rebalancing
+        # Account for size changes between indexing and rebalancing
         self.expected_total_size += size_diff
         size = size_now
         if result:
@@ -160,7 +166,7 @@ class Rebalancer:
                         eta = ((self.expected_total_size - self.total_size)/speed)*migration_fraction
                         progress(self.total_size, self.expected_total_size, f"ETA: {time_fmt(eta)}")
 
-    #For each file in the directory recursively, writes <file-path>-<size> to index file
+    # For each file in the directory recursively, writes <file-path>-<size> to index file
     def generate_rebalance_file_index(self):
         with open(self.index, 'w') as file_index:
             total_size = 0
@@ -178,7 +184,7 @@ class Rebalancer:
                         print(f"OS error: {err}")
         progress_done()
 
-    #Stops the progress printing and prints stats collected so far
+    # Stops the progress printing and prints stats collected so far
     def __exit__(self, exc_type, exc_value, traceback):
         progress_done()
         if self.rebalance_start != 0:
@@ -193,8 +199,9 @@ class Rebalancer:
             print(f"Time spent in migration: {time_fmt(self.migration_duration)} [{self.migration_duration/self.duration:.2%}]")
             print(f"Time spent in skipping: {time_fmt(self.skipped_migration_duration)} [{self.skipped_migration_duration/self.duration:.2%}]")
 
-#/proc/mounts has active mount information. It checks that the given path is
-#mounted on glusterfs
+
+# /proc/mounts has active mount information. It checks that the given path is
+# mounted on glusterfs
 def check_glusterfs_supported_path(p):
     real_path = os.path.realpath(p)
     if not os.path.isdir(real_path):
@@ -219,6 +226,7 @@ def check_glusterfs_supported_path(p):
             p, _, _ = p.rpartition('/')
 
     raise argparse.ArgumentTypeError(f"{real_path} is not a valid glusterfs path")
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
