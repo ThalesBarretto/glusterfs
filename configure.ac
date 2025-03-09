@@ -270,7 +270,7 @@ if test "x$RPCGEN" = "xno"; then
 fi
 
 # Force 'char' type to be signed
-CFLAGS="${CFLAGS} -fsigned-char"
+CFLAGS="${CFLAGS} -fsigned-char -funsigned-bitfields"
 
 # Initialize CFLAGS before usage
 AC_ARG_ENABLE([debug],
