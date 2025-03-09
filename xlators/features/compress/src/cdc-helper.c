@@ -30,8 +30,8 @@
  * gzip_header is added only during debugging.
  * Refer to the function cdc_dump_iovec_to_disk
  */
-static const char gzip_header[10] = {'\037', '\213', Z_DEFLATED,  0, 0, 0, 0,
-                                     0,      0,      GF_CDC_OS_ID};
+static const unsigned char gzip_header[10] = {
+    '\037', '\213', Z_DEFLATED, 0, 0, 0, 0, 0, 0, GF_CDC_OS_ID};
 
 static int32_t
 cdc_next_iovec(cdc_info_t *ci)
