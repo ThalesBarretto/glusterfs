@@ -277,7 +277,7 @@ AC_ARG_ENABLE([debug],
               AS_HELP_STRING([--enable-debug],[Enable debug build options.]))
 if test "x$enable_debug" = "xyes"; then
         BUILD_DEBUG=yes
-        GF_CFLAGS="${GF_CFLAGS} -g -O0 -DDEBUG"
+        GF_CFLAGS="${GF_CFLAGS} -g3 -O0 -DDEBUG -Wall -Wextra -Wpedantic"
 else
         BUILD_DEBUG=no
 fi
