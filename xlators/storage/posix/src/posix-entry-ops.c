@@ -2361,6 +2361,8 @@ posix_create(call_frame_t *frame, xlator_t *this, loc_t *loc, int32_t flags,
     };
 
     dict_t *xdata_rsp = dict_ref(xdata);
+    gf_boolean_t linked = _gf_false;
+    posix_inode_ctx_t *ctx = NULL;
 
     DECLARE_OLD_FS_ID_VAR;
 
@@ -2436,11 +2438,59 @@ posix_create(call_frame_t *frame, xlator_t *this, loc_t *loc, int32_t flags,
 
     mode_bit = (priv->create_mask & mode) | priv->force_create_mode;
     mode = posix_override_umask(mode, mode_bit);
+
+    /* Check if the 'gfid' already exists, because this create may be an
+       internal call from distribute for creating 'linkfile', and that
+       linkfile may be for a hardlinked file */
+    if (dict_get_sizen(xdata, GLUSTERFS_INTERNAL_FOP_KEY)) {
+        dict_del_sizen(xdata, GLUSTERFS_INTERNAL_FOP_KEY);
+        /* trash xlator did not bring the uuid_via the call
+         * to GFID_NULL_CHECK_AND_GOTO() above.
+         * Fetch it explicitly here.
+         */
+        if (frame->root->pid == GF_SERVER_PID_TRASH) {
+            op_ret = dict_get_gfuuid(xdata, "gfid-req", &uuid_req);
+            if (op_ret) {
+                gf_msg_debug(this->name, 0,
+                             "failed to get the gfid from dict for %s",
+                             loc->path);
+                goto real_op;
+            }
+        }
+
+        op_ret = posix_create_link_if_gfid_exists(this, uuid_req, real_path,
+                                                  loc->inode->table);
+        if (!op_ret) {
+            linked = _gf_true;
+            /* A vaild _fd is required in posix_fdstat, which is after post_op label.
+             * So, we should open this existing linkfile here.
+             */
+            _fd = sys_open(real_path, _flags & ~O_EXCL, mode);
+            if (_fd == -1) {
+                op_errno = errno;
+                op_ret = -1;
+                gf_msg(this->name, GF_LOG_ERROR, errno, P_MSG_OPEN_FAILED,
+                       "open on %s failed", real_path);
+                goto out;
+            }
+            goto post_op;
+        }
+    }
+real_op:
     _fd = sys_open(real_path, _flags, mode);
 
     if (_fd == -1) {
         op_errno = errno;
         op_ret = -1;
+        if (op_errno == EEXIST) {
+            if (dict_get_sizen(xdata, GF_FORCE_REPLACE_KEY)) {
+                dict_del_sizen(xdata, GF_FORCE_REPLACE_KEY);
+                op_ret = posix_unlink_stale_linkto(frame, this, real_path, &op_errno, loc);
+
+                if (op_ret == 0)
+                    goto real_op;
+            }
+        }
         gf_msg(this->name, GF_LOG_ERROR, errno, P_MSG_OPEN_FAILED,
                "open on %s failed", real_path);
         goto out;
@@ -2461,6 +2511,8 @@ posix_create(call_frame_t *frame, xlator_t *this, loc_t *loc, int32_t flags,
                "chown on %s failed", real_path);
     }
 #endif
+
+post_op:
     op_ret = posix_acl_xattr_set(real_path, xdata);
     if (op_ret) {
         gf_msg(this->name, GF_LOG_ERROR, errno, P_MSG_ACL_FAILED,
@@ -2470,15 +2522,26 @@ posix_create(call_frame_t *frame, xlator_t *this, loc_t *loc, int32_t flags,
     if (priv->update_pgfid_nlinks) {
         MAKE_PGFID_XATTR_KEY(pgfid_xattr_key, PGFID_XATTR_KEY_PREFIX,
                              loc->pargfid);
-        nlink_samepgfid = 1;
-        SET_PGFID_XATTR(real_path, pgfid_xattr_key, nlink_samepgfid,
-                        XATTR_CREATE, op_ret, this, ignore);
+        op_ret = posix_inode_ctx_get_all (loc->inode, this, &ctx);
+        if (op_ret < 0) {
+            op_errno = ENOMEM;
+            goto out;
+        }
+
+        pthread_mutex_lock (&ctx->pgfid_lock);
+        {
+            LINK_MODIFY_PGFID_XATTR (real_path, pgfid_xattr_key,
+                                     nlink_samepgfid, 0, op_ret,
+                                     this, unlock);
+        }
+unlock:
+        pthread_mutex_unlock (&ctx->pgfid_lock);
     }
 
     if (priv->gfid2path) {
         posix_set_gfid2path_xattr(this, real_path, loc->pargfid, loc->name);
     }
-ignore:
+
     op_ret = posix_entry_create_xattr_set(this, loc, real_path, xdata);
     if (op_ret) {
         gf_msg(this->name, GF_LOG_ERROR, errno, P_MSG_XATTR_FAILED,
@@ -2486,14 +2549,16 @@ ignore:
     }
 
 fill_stat:
-    op_ret = posix_gfid_set(this, real_path, loc, xdata, frame->root->pid,
-                            &op_errno);
-    if (op_ret) {
-        gf_msg(this->name, GF_LOG_ERROR, op_errno, P_MSG_GFID_FAILED,
-               "setting gfid on %s failed", real_path);
-        goto out;
-    } else {
-        gfid_set = _gf_true;
+    if (!linked) {
+        op_ret = posix_gfid_set(this, real_path, loc, xdata, frame->root->pid,
+                                &op_errno);
+        if (op_ret) {
+            gf_msg(this->name, GF_LOG_ERROR, op_errno, P_MSG_GFID_FAILED,
+                   "setting gfid on %s failed", real_path);
+            goto out;
+        } else {
+            gfid_set = _gf_true;
+        }
     }
 
     op_ret = posix_fdstat(this, loc->inode, _fd, &stbuf, _gf_true);
