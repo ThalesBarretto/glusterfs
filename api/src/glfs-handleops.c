@@ -2404,19 +2404,17 @@ pub_glfs_h_acl_set(struct glfs *fs, struct glfs_object *object,
 
     if (IA_ISLNK(object->inode->ia_type)) {
         new_object = glfs_h_resolve_symlink(fs, object);
-        if (new_object == NULL) {
-            acl_free(acl_s);
+        if (new_object == NULL)
             goto out;
-        }
     } else
         new_object = object;
 
     ret = pub_glfs_h_setxattrs(fs, new_object, acl_key, acl_s,
                                strlen(acl_s) + 1, 0);
 
-    acl_free(acl_s);
-
 out:
+    if (acl_s)
+        acl_free(acl_s);
     if (IA_ISLNK(object->inode->ia_type) && new_object)
         glfs_h_close(new_object);
 
