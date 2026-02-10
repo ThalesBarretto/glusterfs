@@ -605,6 +605,7 @@ out:
     if (ret) {
         if (*xattr_req)
             dict_unref(*xattr_req);
+        *xattr_req = NULL;
     }
 
     return ret;
