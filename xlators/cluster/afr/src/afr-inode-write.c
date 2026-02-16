@@ -381,7 +381,7 @@ afr_arbiter_writev_wind(call_frame_t *frame, xlator_t *this, int subvol)
 {
     afr_local_t *local = frame->local;
     afr_private_t *priv = this->private;
-    static char byte = 0xFF;
+    static unsigned char byte = 0xFF;
     static struct iovec vector = {&byte, 1};
     int32_t count = 1;
 
