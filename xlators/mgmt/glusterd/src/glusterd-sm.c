@@ -479,7 +479,7 @@ glusterd_ac_send_friend_remove_req(glusterd_friend_sm_event_t *event,
         ret = glusterd_friend_sm_new_event(event_type, &new_event);
 
         if (!ret) {
-            new_event->peername = peerinfo->hostname;
+            new_event->peername = gf_strdup(peerinfo->hostname);
             gf_uuid_copy(new_event->peerid, peerinfo->uuid);
             ret = glusterd_friend_sm_inject_event(new_event);
         } else {
