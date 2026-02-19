@@ -1,0 +1,10 @@
+glusterfs source: debian-watch-does-not-check-openpgp-signature
+glusterfs source: upstream-metadata-file-is-missing
+glusterfs source: maintainer-manual-page [debian/manpages/gf_attach.8]
+glusterfs source: maintainer-manual-page [debian/manpages/glfsheal.8]
+glusterfs source: maintainer-manual-page [debian/manpages/gluster-eventsapi.8]
+glusterfs source: maintainer-manual-page [debian/manpages/gluster-georep-sshkey.8]
+glusterfs source: maintainer-manual-page [debian/manpages/gluster-mountbroker.8]
+glusterfs source: maintainer-manual-page [debian/manpages/glustereventsd.8]
+glusterfs source: maintainer-manual-page [debian/manpages/glusterfind.8]
+glusterfs source: very-long-line-length-in-source-file *

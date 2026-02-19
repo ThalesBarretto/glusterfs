@@ -1,0 +1,4 @@
+usr/sbin/mount.glusterfs
+usr/sbin/glusterfs
+usr/bin/fusermount-glusterfs
+usr/bin/glusterfind

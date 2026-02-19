@@ -1,0 +1,7 @@
+01-remove-use-systemd-guards-around-several.diff
+02-systemd-service.diff
+03-systemd-environment-file.diff
+04-systemd-extra-services.diff
+05-remove-hashbang.diff
+06-hardcode-ssl-path.diff
+08-bash-term-in-posix-shell.diff

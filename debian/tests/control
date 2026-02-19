@@ -1,0 +1,7 @@
+Tests: smoke
+Restrictions: needs-root, superficial, isolation-container
+Depends: @
+
+Tests: create-volume
+Restrictions: allow-stderr, isolation-machine, breaks-testbed, needs-root
+Depends: @, xfsprogs

@@ -1,0 +1,5 @@
+Version: 5
+Source: https://api.github.com/repos/gluster/glusterfs/git/matching-refs/tags/
+Matching-Pattern: https://api.github.com/repos/[^/]+/[^/]+/git/refs/tags/v(\d+\.\d+)
+Download-Url-Mangle: s%(api.github.com/repos/[^/]+/[^/]+)/git/refs/%$1/tarball/refs/%g
+Searchmode: plain

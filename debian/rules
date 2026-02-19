@@ -1,0 +1,67 @@
+#!/usr/bin/make -f
+
+include /usr/share/dpkg/architecture.mk
+include /usr/share/dpkg/pkg-info.mk
+
+# Fix build on these arches (LP: #1951408) (#1000215)
+ifneq (,$(filter $(DEB_HOST_ARCH), armel armhf mipsel m68k sh4 hppa))
+export DEB_CPPFLAGS_MAINT_APPEND = -DUATOMIC_NO_LINK_ERROR
+endif
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+DEB_CONFIGURE_EXTRA_FLAGS := \
+	--disable-linux-io_uring --enable-firewalld --libexecdir=/usr/lib/$(DEB_HOST_MULTIARCH) --with-mountutildir=/usr/sbin
+
+# Disable tcmalloc due to problems with dlopen (LP: #1950777 #1951126 Debian: #999700 #999619)
+DEB_CONFIGURE_EXTRA_FLAGS += --without-tcmalloc
+
+%:
+	dh $@ --with python3
+
+override_dh_install:
+	cp extras/run-gluster.tmpfiles $(CURDIR)/debian/glusterfs-server.tmpfiles
+	cp extras/systemd/glusterd.service $(CURDIR)/debian/glusterfs-server.glusterd.service
+	cp extras/systemd/glustereventsd.service $(CURDIR)/debian/glusterfs-server.glustereventsd.service
+	cp extras/systemd/gluster-ta-volume.service $(CURDIR)/debian/glusterfs-server.gluster-ta-volume.service
+	cp extras/systemd/glusterfssharedstorage.service $(CURDIR)/debian/glusterfs-server.glusterfssharedstorage.service
+	strip --remove-section=.comment --remove-section=.note --strip-unneeded \
+		debian/tmp/usr/lib/*/glusterfs/*/xlator/debug/trace.so
+	strip --remove-section=.comment --remove-section=.note --strip-unneeded \
+		debian/tmp/usr/lib/*/glusterfs/*/xlator/debug/error-gen.so
+	strip --remove-section=.comment --remove-section=.note --strip-unneeded \
+		debian/tmp/usr/lib/*/glusterfs/*/xlator/debug/io-stats.so
+	strip --remove-section=.comment --remove-section=.note --strip-unneeded \
+		debian/tmp/usr/lib/*/glusterfs/*/xlator/debug/sink.so
+	strip --remove-section=.comment --remove-section=.note --strip-unneeded \
+		debian/tmp/usr/lib/*/glusterfs/*/xlator/debug/delay-gen.so
+	find debian/tmp/usr/lib -type f -name \*.la -delete
+	dh_install
+	rm -f $(CURDIR)/debian/glusterfs-common/usr/lib/$(DEB_HOST_MULTIARCH)/glusterfs/python/syncdaemon/README.md
+	rm -rf $(CURDIR)/debian/glusterfs-common/usr/lib/$(DEB_HOST_MULTIARCH)/glusterfs/gfevents/__pycache__/
+
+override_dh_missing:
+	dh_missing --list-missing
+
+override_dh_clean:
+	rm -rf $(CURDIR)/libglusterfs/src/__pycache__/
+	dh_clean
+
+override_dh_auto_configure:
+	dh_auto_configure -- $(DEB_CONFIGURE_EXTRA_FLAGS)
+
+override_dh_installsystemd:
+	dh_installsystemd --no-start --no-enable --restart-after-upgrade --name=glusterd
+	dh_installsystemd --no-start --no-enable --restart-after-upgrade --name=glustereventsd
+	dh_installsystemd --no-start --no-enable --restart-after-upgrade --name=glusterfssharedstorage
+	dh_installsystemd --no-start --no-enable --restart-after-upgrade --name=gluster-ta-volume
+
+override_dh_python3:
+	dh_python3 usr/lib/$(DEB_HOST_MULTIARCH)/glusterfs/$(DEB_VERSION_UPSTREAM)/xlator/features/glupy/
+	dh_python3 usr/lib/$(DEB_HOST_MULTIARCH)/glusterfs/python/syncdaemon/
+	dh_python3 usr/lib/$(DEB_HOST_MULTIARCH)/glusterfs/glusterfind/
+	dh_python3 usr/lib/$(DEB_HOST_MULTIARCH)/glusterfs/events/
+	dh_python3
+
+override_dh_makeshlibs:
+	dh_makeshlibs --no-scripts -VUpstream-Version

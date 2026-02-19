@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -e
+
+systemctl start glusterd.service
+systemctl status glusterd.service
+
+gluster peer status
+gluster pool list
+gluster get-state glusterd
+cat /var/run/gluster/glusterd_state_*
+

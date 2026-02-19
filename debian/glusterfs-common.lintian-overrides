@@ -1,0 +1,9 @@
+glusterfs-common: hardening-no-fortify-functions [usr/lib/*/glusterfs/*/xlator/features/cloudsync.so]
+glusterfs-common: executable-in-usr-lib [usr/lib/ocf/resource.d/*
+glusterfs-common: executable-in-usr-lib [usr/lib/*/ganesha/*
+glusterfs-common: executable-in-usr-lib [usr/lib/*/glusterfs/*
+glusterfs-common: spelling-error-in-binary mor more [usr/lib/*/glusterfs/*/xlator/mgmt/glusterd.so]
+glusterfs-common: spelling-error-in-binary ofthe of the [usr/lib/*/glusterfs/*/xlator/protocol/server.so]
+glusterfs-common: spelling-error-in-binary onthe on the [usr/lib/*/glusterfs/*/xlator/cluster/ec.so]
+glusterfs-common: spelling-error-in-binary onthe on the [usr/lib/*/glusterfs/*/xlator/mgmt/glusterd.so]
+glusterfs-common: spelling-error-in-binary withthe with the [usr/lib/*/glusterfs/*/xlator/features/gfid-access.so]

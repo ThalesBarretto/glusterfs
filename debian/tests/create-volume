@@ -1,0 +1,131 @@
+#!/bin/bash
+
+set -e
+set -o pipefail
+
+brick1_file="/data1.img"
+brick1_mount="/data/brick1"
+gv_mount="/mnt"
+gv="gv0"
+tmp_data=$(mktemp)
+
+cleanup() {
+    # shellcheck disable=SC2181
+    if [ $? -ne 0 ]; then
+        set +e
+        # we are here because something failed
+        printf "\n\nSomething failed, gathering debug info\n"
+        systemctl --no-pager status glusterd
+        for n in /var/log/glusterfs/*.log; do
+            echo "${n}:"
+            cat "${n}"
+            echo
+        done
+    fi
+    set +e
+    printf "\n\nCleaning up...\n"
+    printf "\nUmounting volume\n"
+    umount "${gv_mount}"
+    printf "\nStopping volume %s\n" "${gv}"
+    gluster --mode=script volume stop "${gv}"
+    printf "\nDeleting volume %s\n" "${gv}"
+    gluster --mode=script volume delete "${gv}"
+    [ -n "${tmp_data}" ] && rm -f "${tmp_data}"
+    systemctl stop glusterd
+    [ -n "${brick1_mount}" ] && {
+        umount "${brick1_mount}"
+        rm -rf "${brick1_mount}"
+    }
+    [ -n "${loop}" ] && losetup --detach "${loop}"
+    [ -n "${brick1_file}" ] && rm -f "${brick1_file}"
+}
+
+trap cleanup EXIT
+
+check_running_glusterd() {
+    echo -n "Checking if glusterd is ready (3s timeout)... "
+    local -i result=0
+    output=$(gluster get-state odir /dev file null 2>&1) || result=$?
+    if [ ${result} -eq 0 ]; then
+        echo "ready"
+    else
+        echo "not ready"
+        echo "${output}"
+    fi
+    return ${result}
+}
+
+printf "\n\nCreating backend brick file\n"
+dd if=/dev/zero of="${brick1_file}" bs=100M count=5
+
+loop=$(losetup -f --show "${brick1_file}")
+[ -e "${loop}" ] || {
+    echo "Failed to acquire loop device for file ${brick1_file}"
+    exit 1
+}
+
+printf "\n\nFormatting backend device %s with XFS\n" "${loop}"
+output=$(mkfs.xfs "${loop}" 2>&1) || {
+    result=$?
+    echo "${output}"
+    exit ${result}
+}
+
+printf "\n\nMounting backend device %s\n" "${loop}"
+mkdir -p "${brick1_mount}"
+mount "${loop}" "${brick1_mount}"
+
+printf "\n\nRestarting glusterd service\n"
+systemctl restart glusterd
+check_running_glusterd
+
+printf "\n\nAsserting there are no volumes yet\n"
+# volume list goes to stdout, "No volumes in cluster" message goes
+# to stderr if there are no vols
+vols=$(gluster volume list)
+if [ -n "${vols}" ]; then
+    echo "Error, found unexpected volumes in the cluster:"
+    echo "${vols}"
+    exit 1
+fi
+
+printf "\n\nCreating gluster %s volume\n" "${gv}"
+gluster volume create "${gv}" "$(hostname)":/data/brick1/"${gv}"
+
+printf "\n\nStarting %s volume\n" "${gv}"
+gluster volume start "${gv}"
+volume_info=$(gluster volume info)
+printf "\n\nVerifying if volume %s started... " "${gv}"
+echo "${volume_info}" | grep "^Status: Started" || {
+    echo "FAIL"
+    echo "Volume info:"
+    echo "${volume_info}"
+    exit 1
+}
+
+printf "\n\nMounting volume %s\n" "${gv}"
+mount -t glusterfs "$(hostname)":/"${gv}" "${gv_mount}"
+
+printf "\n\nPreparing test file\n"
+dd if=/dev/urandom of="${tmp_data}" bs=1k count=1k
+printf "\n\nCopying test file into volume %s\n" "${gv}"
+cp -a "${tmp_data}" "${gv_mount}"
+printf "\n\nComparing copied data with source\n"
+cmp "${tmp_data}" "${gv_mount}"/$(basename "${tmp_data}")
+
+printf "\n\nRestaring glusterd and checking test file access again\n"
+systemctl restart glusterd
+check_running_glusterd
+
+declare -i count=1
+while ! ls -la "${gv_mount}" &>/dev/null; do
+    echo "Waiting for mount point to be ready (${count})"
+    count+=1
+    if [ ${count} -gt 5 ]; then
+        echo "Gave up waiting"
+        exit 1
+    fi
+    sleep 1
+done
+printf "\n\nComparing copied data with source one more time\n"
+cmp "${tmp_data}" "${gv_mount}"/$(basename "${tmp_data}")
