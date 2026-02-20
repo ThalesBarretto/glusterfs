@@ -1501,7 +1501,6 @@ found:
     object = GF_CALLOC(1, sizeof(struct glfs_object), glfs_mt_glfs_object_t);
     if (object == NULL) {
         errno = ENOMEM;
-        ret = -1;
         goto out;
     }
 
