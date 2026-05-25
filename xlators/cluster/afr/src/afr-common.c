@@ -5884,22 +5884,15 @@ __afr_handle_ping_event(xlator_t *this, xlator_t *child_xlator, const int idx,
 
     if (child_latency_msec > halo_max_latency_msec &&
         priv->child_up[idx] == 1 && up_children > priv->halo_min_replicas) {
-        if ((up_children - 1) < priv->halo_min_replicas) {
-            gf_log(child_xlator->name, GF_LOG_INFO,
-                   "Overriding halo threshold, "
-                   "min replicas: %d",
-                   priv->halo_min_replicas);
-        } else {
-            gf_log(child_xlator->name, GF_LOG_INFO,
-                   "Child latency (%" PRId64
-                   " ms) "
-                   "exceeds halo threshold (%" PRId64
-                   "), "
-                   "marking child down.",
-                   child_latency_msec, halo_max_latency_msec);
-            if (priv->halo_child_up[idx]) {
-                *event = GF_EVENT_CHILD_DOWN;
-            }
+        gf_log(child_xlator->name, GF_LOG_INFO,
+               "Child latency (%" PRId64
+               " ms) "
+               "exceeds halo threshold (%" PRId64
+               "), "
+               "marking child down.",
+               child_latency_msec, halo_max_latency_msec);
+        if (priv->halo_child_up[idx]) {
+            *event = GF_EVENT_CHILD_DOWN;
         }
     } else if (child_latency_msec < halo_max_latency_msec &&
                priv->child_up[idx] == 0) {
