@@ -6227,7 +6227,6 @@ afr_notify(xlator_t *this, int32_t event, void *data, void *data2)
 {
     afr_private_t *priv = NULL;
     xlator_t *child_xlator = NULL;
-    int i = -1;
     int propagate = 0;
     int had_heard_from_all = 0;
     int have_heard_from_all = 0;
@@ -6383,18 +6382,10 @@ afr_notify(xlator_t *this, int32_t event, void *data, void *data2)
                of events from all subvolumes. If at least one subvol
                had come up, propagate CHILD_UP, but only this time
             */
-            event = GF_EVENT_CHILD_DOWN;
-            for (i = 0; i < priv->child_count; i++) {
-                if (priv->last_event[i] == GF_EVENT_CHILD_UP) {
-                    event = GF_EVENT_CHILD_UP;
-                    break;
-                }
-
-                if (priv->last_event[i] == GF_EVENT_CHILD_CONNECTING) {
-                    event = GF_EVENT_CHILD_CONNECTING;
-                    /* continue to check other events for CHILD_UP */
-                }
-            }
+            if (__afr_get_up_children_count(priv) > 0)
+                event = GF_EVENT_CHILD_UP;
+            else
+                event = GF_EVENT_CHILD_DOWN;
         }
     }
     UNLOCK(&priv->lock);
