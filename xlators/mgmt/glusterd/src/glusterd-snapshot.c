@@ -5471,6 +5471,58 @@ out:
     return ret;
 }
 
+/* Does any local brick of this snapshot still have a dependent clone on its
+ * backend (e.g. a ZFS clone), making the snapshot un-removable by the provider?
+ * Used by the delete prevalidate (to refuse the op) and by the soft-limit
+ * auto-delete (to skip un-removable snapshots). Providers that do not track
+ * dependents (LVM) leave the .dependents slot NULL and report none, so their
+ * behaviour is unchanged. The check is per-brick; only the node that owns a
+ * brick can query its backend, so each peer evaluates its local bricks.
+ * dependent_info (optional) receives a short description of the first dependent
+ * found, for the operator-facing error message. */
+static gf_boolean_t
+glusterd_snapshot_has_dependent_clone(glusterd_snap_t *snap,
+                                      char *dependent_info, size_t info_len)
+{
+    glusterd_volinfo_t *snap_vol = NULL;
+    glusterd_brickinfo_t *brickinfo = NULL;
+    struct glusterd_snap_ops *snap_ops = NULL;
+    int32_t brick_count = -1;
+    gf_boolean_t has_dependent = _gf_false;
+    int32_t ret = 0;
+
+    if (!snap)
+        return _gf_false;
+
+    if (dependent_info && info_len > 0)
+        dependent_info[0] = '\0';
+
+    cds_list_for_each_entry(snap_vol, &snap->volumes, vol_list)
+    {
+        snap_ops = NULL;
+        glusterd_snapshot_plugin_by_name(snap_vol->snap_plugin, &snap_ops);
+        if (!snap_ops || !snap_ops->dependents)
+            continue;
+
+        brick_count = -1;
+        cds_list_for_each_entry(brickinfo, &snap_vol->bricks, brick_list)
+        {
+            brick_count++;
+            if (gf_uuid_compare(brickinfo->uuid, MY_UUID))
+                continue;
+
+            has_dependent = _gf_false;
+            ret = snap_ops->dependents(brickinfo, snap_vol->snapshot->snapname,
+                                       snap_vol->volname, brick_count,
+                                       &has_dependent, dependent_info, info_len);
+            if (ret == 0 && has_dependent)
+                return _gf_true;
+        }
+    }
+
+    return _gf_false;
+}
+
 int
 glusterd_snapshot_remove_prevalidate(dict_t *dict, char **op_errstr,
                                      uint32_t *op_errno, dict_t *rsp_dict)
@@ -5479,11 +5531,6 @@ glusterd_snapshot_remove_prevalidate(dict_t *dict, char **op_errstr,
     char *snapname = NULL;
     xlator_t *this = THIS;
     glusterd_snap_t *snap = NULL;
-    glusterd_volinfo_t *snap_vol = NULL;
-    glusterd_brickinfo_t *brickinfo = NULL;
-    struct glusterd_snap_ops *snap_ops = NULL;
-    int32_t brick_count = -1;
-    gf_boolean_t has_dependent = _gf_false;
     char dependent_info[4096] = "";
     char err_str[4096] = "";
 
@@ -5516,44 +5563,20 @@ glusterd_snapshot_remove_prevalidate(dict_t *dict, char **op_errstr,
      * `zfs clone` for snapshot clone/restore) cannot be removed by the
      * provider's plain `zfs destroy`. Refuse the delete here, before any
      * decommission state is written, rather than letting it fail at commit
-     * time and report success. Providers that do not track dependents (e.g.
-     * LVM) leave .dependents NULL and are skipped, so their behaviour is
-     * unchanged. The check is per-brick and only the node owning a brick can
-     * query its backend, so each peer validates its local bricks. */
-    cds_list_for_each_entry(snap_vol, &snap->volumes, vol_list)
-    {
-        snap_ops = NULL;
-        glusterd_snapshot_plugin_by_name(snap_vol->snap_plugin, &snap_ops);
-        if (!snap_ops || !snap_ops->dependents)
-            continue;
-
-        brick_count = -1;
-        cds_list_for_each_entry(brickinfo, &snap_vol->bricks, brick_list)
-        {
-            brick_count++;
-            if (gf_uuid_compare(brickinfo->uuid, MY_UUID))
-                continue;
-
-            has_dependent = _gf_false;
-            dependent_info[0] = '\0';
-            ret = snap_ops->dependents(brickinfo, snap_vol->snapshot->snapname,
-                                       snap_vol->volname, brick_count,
-                                       &has_dependent, dependent_info,
-                                       sizeof(dependent_info));
-            if (ret == 0 && has_dependent) {
-                snprintf(err_str, sizeof(err_str),
-                         "Snapshot %s cannot be deleted: its backend snapshot "
-                         "still has a dependent clone (%s). Remove the "
-                         "dependent clone before deleting this snapshot.",
-                         snapname, dependent_info);
-                gf_msg(this->name, GF_LOG_ERROR, 0, GD_MSG_SNAP_REMOVE_FAIL,
-                       "%s", err_str);
-                *op_errstr = gf_strdup(err_str);
-                *op_errno = EG_OPNOTSUP;
-                ret = -1;
-                goto out;
-            }
-        }
+     * time and report success. */
+    if (glusterd_snapshot_has_dependent_clone(snap, dependent_info,
+                                              sizeof(dependent_info))) {
+        snprintf(err_str, sizeof(err_str),
+                 "Snapshot %s cannot be deleted: its backend snapshot still "
+                 "has a dependent clone (%s). Remove the dependent clone "
+                 "before deleting this snapshot.",
+                 snapname, dependent_info);
+        gf_msg(this->name, GF_LOG_ERROR, 0, GD_MSG_SNAP_REMOVE_FAIL, "%s",
+               err_str);
+        *op_errstr = gf_strdup(err_str);
+        *op_errno = EG_OPNOTSUP;
+        ret = -1;
+        goto out;
     }
 
     ret = dict_set_dynstr_with_alloc(dict, "snapuuid",
@@ -7481,6 +7504,7 @@ glusterd_handle_snap_limit(dict_t *dict, dict_t *rsp_dict)
     glusterd_volinfo_t *volinfo = NULL;
     uint64_t limit = 0;
     int64_t count = 0;
+    int64_t scanned = 0;
     glusterd_snap_t *snap = NULL;
     glusterd_volinfo_t *tmp_volinfo = NULL;
     uint64_t opt_max_hard = GLUSTERD_SNAPS_MAX_HARD_LIMIT;
@@ -7539,9 +7563,36 @@ glusterd_handle_snap_limit(dict_t *dict, dict_t *rsp_dict)
         if (count <= 0)
             goto out;
 
-        tmp_volinfo = cds_list_entry(volinfo->snap_volumes.next,
-                                     glusterd_volinfo_t, snapvol_list);
-        snap = tmp_volinfo->snapshot;
+        /* Delete the oldest snapshot that can actually be removed, considering
+         * only the over-limit (oldest `count`) snapshots — never the newest
+         * `limit`, which are the ones to keep. Skipping a snapshot whose
+         * backend still has a dependent clone (un-removable, e.g. a ZFS clone)
+         * avoids silently orphaning it. If every over-limit snapshot is
+         * un-removable, reclaim nothing this round and let snap_count rise
+         * toward the hard limit (where snapshot creation is refused), rather
+         * than orphaning a snapshot or deleting a newer one. */
+        snap = NULL;
+        scanned = 0;
+        cds_list_for_each_entry(tmp_volinfo, &volinfo->snap_volumes,
+                                snapvol_list)
+        {
+            if (scanned++ >= count)
+                break;
+            if (!glusterd_snapshot_has_dependent_clone(tmp_volinfo->snapshot,
+                                                       NULL, 0)) {
+                snap = tmp_volinfo->snapshot;
+                break;
+            }
+        }
+        if (!snap) {
+            gf_msg(this->name, GF_LOG_WARNING, 0, GD_MSG_SOFT_LIMIT_REACHED,
+                   "auto-delete: the oldest over-limit snapshot(s) of volume "
+                   "%s have dependent clones and cannot be reclaimed; "
+                   "snap_count will rise toward the hard limit until a clone "
+                   "is removed.",
+                   volinfo->volname);
+            continue;
+        }
         GF_ASSERT(snap);
 
         gf_msg(this->name, GF_LOG_WARNING, 0, GD_MSG_SOFT_LIMIT_REACHED,
