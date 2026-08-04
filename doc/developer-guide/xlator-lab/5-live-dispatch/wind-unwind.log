@@ -1,0 +1,23 @@
+# E4 captured gdb session — WIND/UNWIND through anatomy-skel
+# Substrate C: 12dev build, root daemon, /tmp/mnt-e4 (fuse.glusterfs); real I/O confirmed.
+# Graph: fuse -> meta(auto) -> t-top(anatomy-skel) -> t-posix(storage/posix)
+
+## First captured lookup (mount-time root lookup):
+
+>>> WIND: skel_lookup entered (this=t-top); about to STACK_WIND lookup to FIRST_CHILD
+
+Thread 12 "glfs_fuseproc" hit Breakpoint 2, default_lookup_cbk (frame=0x7fffdc0017b8, cookie=0x7fffdc001958, this=0x55555562b198, op_ret=0, op_errno=0, inode=0x55555562f7c8, buf=0x7ffff1272d10, xdata=0x7fffdc0018c8, postparent=0x7ffff1272db0) at defaults.c:1546
+1546		STACK_UNWIND_STRICT (lookup, frame, op_ret, op_errno,
+
+>>> UNWIND: default_lookup_cbk fired (skel's cbk). Stack (note skel_lookup still below = cbk ran inside the wind):
+#0  default_lookup_cbk (frame=0x7fffdc0017b8, cookie=0x7fffdc001958, this=0x55555562b198, op_ret=0, op_errno=0, inode=0x55555562f7c8, buf=0x7ffff1272d10, xdata=0x7fffdc0018c8, postparent=0x7ffff1272db0) at defaults.c:1546
+#1  0x00007ffff633aef9 in posix_lookup (frame=0x7fffdc001958, this=<optimized out>, loc=<optimized out>, xdata=<optimized out>) at posix-entry-ops.c:391
+#2  0x00007ffff7429545 in skel_lookup (frame=0x7fffdc0017b8, this=0x55555562b198, loc=0x7ffff1273e90, xdata=0x7fffdc0008c8) at anatomy_skel.c:25
+#3  0x00007ffff7f5be44 in default_lookup (frame=0x7fffdc0017b8, this=<optimized out>, loc=0x7ffff1273e90, xdata=0x7fffdc0008c8) at defaults.c:3024
+#4  0x00007ffff6e5da7b in meta_lookup (frame=frame@entry=0x7fffdc0017b8, this=this@entry=0x55555562caa8, loc=loc@entry=0x7ffff1273e90, xdata=xdata@entry=0x7fffdc0008c8) at meta.c:46
+#5  0x00007ffff7f04ebd in syncop_lookup (subvol=subvol@entry=0x55555562caa8, loc=loc@entry=0x7ffff1273e90, iatt=iatt@entry=0x0, parent=parent@entry=0x0, xdata_in=xdata_in@entry=0x7fffdc0008c8, xdata_out=xdata_out@entry=0x0) at syncop.c:1436
+#6  0x00007ffff6eb17c3 in fuse_first_lookup (this=this@entry=0x5555555cbd08) at fuse-bridge.c:5368
+
+Thread 12 "glfs_fuseproc" hit Breakpoint 1, skel_lookup (frame=0x7fffdc0017b8, this=0x55555562b198, loc=0x7fffdc001f98, xdata=0x7fffdc0008c8) at anatomy_skel.c:20
+20	    gf_log(this->name, GF_LOG_INFO, "anatomy-skel: lookup %s",
+

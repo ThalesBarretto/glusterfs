@@ -1,0 +1,9 @@
+# Build artifacts produced by the lab experiments - regenerable, not tracked.
+*.so
+*.o
+*.lo
+*.output
+core
+core.*
+# experiment probe binaries (extensionless)
+2-registration/e1_loader_probe

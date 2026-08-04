@@ -1,0 +1,9 @@
+volume t-posix
+    type storage/posix
+    option directory /tmp/anatomy-brick
+end-volume
+
+volume t-top
+    type testing/anatomy-skel
+    subvolumes t-posix
+end-volume
