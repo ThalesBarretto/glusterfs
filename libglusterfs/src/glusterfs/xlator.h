@@ -539,8 +539,9 @@ typedef int32_t (*fop_copy_file_range_t)(call_frame_t *frame, xlator_t *this,
                                          size_t len, uint32_t flags,
                                          dict_t *xdata);
 
-/* WARNING: make sure the list is in order with FOP definition in
-   `rpc/xdr/src/glusterfs-fops.x`.
+/* WARNING: make sure the list is in order with the GF_FOP_* enum in
+   glusterfs-fops.h. STACK_WIND derives the op index from a member's
+   position in this struct (get_fop_index_from_fn() in stack.h).
    If it is not in order, mainly the metrics related feature would be broken */
 struct xlator_fops {
     fop_stat_t stat;
@@ -842,9 +843,10 @@ struct _xlator {
     uint32_t child_count;
 };
 
-/* This would be the only structure which needs to be exported by
-   the translators. For the backward compatibility, in 4.x series
-   even the old exported fields will be supported */
+/* This is the only structure a translator needs to export: since
+   GlusterFS 6.0 the loader resolves nothing but the "xlator_api"
+   symbol (xlator_dynload_apis()); the old by-name exports (fops,
+   cbks, init, ...) are not consulted. */
 /* XXX: This struct is in use by GD2, and hence SHOULD NOT be modified.
  * If the struct must be modified, see instructions at the comment with
  * GD2MARKER below.
