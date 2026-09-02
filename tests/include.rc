@@ -780,7 +780,20 @@ function cleanup()
 
 function force_terminate () {
         local ret=$?;
-        >&2 echo -e "\nreceived external"\
+        # Disarm: a second signal (impatient Ctrl-C, timeout's -k escalation
+        # racing us) must not re-enter this handler and restart cleanup.
+        trap '' INT TERM HUP;
+        # The TAP consumer reading our stdout (prove) usually dies of the
+        # same signal that got us here, so a write to stdout - or to both
+        # streams, under a harness that merges them into one pipe - would
+        # kill this handler with SIGPIPE in the middle of cleanup.  With
+        # SIGPIPE ignored such writes fail benignly with EPIPE instead,
+        # and cleanup runs to the end.
+        trap '' PIPE;
+        # Cleanup chatter is diagnostics, not TAP - route it to stderr for
+        # the rest of the handler.
+        exec 1>&2;
+        echo -e "\nreceived external"\
                         "signal --`kill -l $ret`--, calling 'cleanup' ...\n";
         cleanup;
         exit $ret;
