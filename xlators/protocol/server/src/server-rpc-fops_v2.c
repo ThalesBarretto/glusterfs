@@ -4503,9 +4503,6 @@ server4_0_setxattr(rpcsvc_request_t *req)
         goto out;
     }
 
-    /* There can be some commands hidden in key, check and proceed */
-    gf_server_check_setxattr_cmd(frame, state->dict);
-
     if (xdr_to_dict(&args.xdata, &state->xdata)) {
         SERVER_REQ_SET_ERROR(req, ret);
         goto out;

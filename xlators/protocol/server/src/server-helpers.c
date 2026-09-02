@@ -1041,31 +1041,6 @@ gf_server_check_getxattr_cmd(call_frame_t *frame, const char *key)
     return 0;
 }
 
-int
-gf_server_check_setxattr_cmd(call_frame_t *frame, dict_t *dict)
-{
-    server_conf_t *conf = NULL;
-    rpc_transport_t *xprt = NULL;
-    uint64_t total_read = 0;
-    uint64_t total_write = 0;
-
-    conf = frame->this->private;
-    if (!conf || !dict)
-        return 0;
-
-    if (dict_foreach_fnmatch(dict, "*io*stat*dump", dict_null_foreach_fn,
-                             NULL) > 0) {
-        list_for_each_entry(xprt, &conf->xprt_list, list)
-        {
-            total_read += xprt->total_bytes_read;
-            total_write += xprt->total_bytes_write;
-        }
-        gf_smsg("stats", GF_LOG_INFO, 0, PS_MSG_RW_STAT, "total-read=%" PRIu64,
-                total_read, "total-write=%" PRIu64, total_write, NULL);
-    }
-
-    return 0;
-}
 
 server_ctx_t *
 server_ctx_get(client_t *client, xlator_t *xlator)
