@@ -1448,7 +1448,7 @@ case $host_os in
         GF_HOST_OS="GF_LINUX_HOST_OS"
         GF_FUSE_CFLAGS="-DFUSERMOUNT_DIR=\\\"\$(bindir)\\\""
         GLUSTERD_WORKDIR="${LOCALSTATEDIR}/lib/glusterd"
-        GF_CFLAGS="${GF_CFLAGS} -I/usr/include/arch/common -DREDEFINE_QUAD_T -DUSE_LIBUCONTEXT=1"
+        GF_CFLAGS="${GF_CFLAGS} -I/usr/include/arch/common -DREDEFINE_QUAD_T"
         GF_LDFLAGS="-lbsd -lucontext ${GF_LDFLAGS}"
         GF_LDADD="${ARGP_LDADD}"
         ;;
