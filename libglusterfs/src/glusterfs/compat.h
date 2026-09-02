@@ -23,10 +23,6 @@
 
 #ifdef GF_LINUX_HOST_OS
 
-#ifndef HAVE_OFF64_T
-typedef int64_t off64_t;
-#endif
-
 #ifdef REDEFINE_QUAD_T
 #define u_quad_t uint64_t
 #define quad_t int64_t

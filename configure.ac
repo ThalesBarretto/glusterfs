@@ -1448,7 +1448,7 @@ case $host_os in
         GF_HOST_OS="GF_LINUX_HOST_OS"
         GF_FUSE_CFLAGS="-DFUSERMOUNT_DIR=\\\"\$(bindir)\\\""
         GLUSTERD_WORKDIR="${LOCALSTATEDIR}/lib/glusterd"
-        GF_CFLAGS="${GF_CFLAGS} -I/usr/include/arch/common -DREDEFINE_QUAD_T -Doff64_t=int64_t -D__off64_t=int64_t -DF_SETLK64=F_SETLK -DF_SETLKW64=F_SETLKW -DF_GETLK64=F_GETLK -DUSE_LIBUCONTEXT=1"
+        GF_CFLAGS="${GF_CFLAGS} -I/usr/include/arch/common -DREDEFINE_QUAD_T -DUSE_LIBUCONTEXT=1"
         GF_LDFLAGS="-lbsd -lucontext ${GF_LDFLAGS}"
         GF_LDADD="${ARGP_LDADD}"
         ;;
@@ -1859,7 +1859,7 @@ esac
 CONTRIBDIR='$(top_srcdir)/contrib'
 AC_SUBST(CONTRIBDIR)
 
-GF_CPPDEFINES='-D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D$(GF_HOST_OS)'
+GF_CPPDEFINES='-D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -D_GNU_SOURCE -D$(GF_HOST_OS)'
 GF_CPPINCLUDES='-include $(top_builddir)/config.h -include $(top_builddir)/site.h -I$(top_srcdir)/libglusterfs/src -I$(top_builddir)/libglusterfs/src'
 if test "x${USE_CONTRIB_URCU}" = "xyes"; then
     GF_CPPINCLUDES="${GF_CPPINCLUDES} -I\$(CONTRIBDIR)/userspace-rcu"
