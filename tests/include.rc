@@ -730,7 +730,7 @@ function cleanup()
                         fs=${tmp%%:*}
                         inode=${tmp#*:}
                         file=`find -x ${fs} -inum ${inode} -print -exit`
-                        echo ${file} | grep "$B0/" && \
+                        echo ${file} | grep -q "$B0/" && \
                             LOOPDEVICES="${LOOPDEVICES} $dev"
                 done
                 for l in $LOOPDEVICES;
@@ -739,22 +739,23 @@ function cleanup()
                 done
                 ;;
         *)
-                echo "`uname -s` loopback device supportmissing"
+                echo "`uname -s` loopback device support missing" >&2
                 ;;
         esac
 
         # remove contents of "GLUSTERD_WORKDIR" except hooks and groups
-        # directories.
-        if [ -n $GLUSTERD_WORKDIR ]
+        # directories.  The -n test MUST be quoted: unquoted, [ -n $VAR ]
+        # is true even for an unset VAR, and the find below would then
+        # expand to 'find /* ... -exec rm -rf' and erase the machine.
+        if [ -n "$GLUSTERD_WORKDIR" ]
         then
                 find  $GLUSTERD_WORKDIR/* -maxdepth 0 -name 'hooks' -prune \
                 -o -name 'groups' -prune -o -exec rm -rf '{}' ';'
         else
-                echo "GLUSTERD_WORKDIR is not set"
+                echo "GLUSTERD_WORKDIR is not set" >&2
         fi
 
         # Complete cleanup time
-        rm -rf "$B0/*" "/etc/glusterd/*";
         rm -rf $WORKDIRS
         find $GLUSTERD_PIDFILEDIR -name "*.pid" | xargs rm -rf
         leftover=""
