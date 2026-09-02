@@ -512,8 +512,15 @@ function run_tests()
 
             local cmd_timeout=$run_timeout;
             if [ ${timeout_cmd_exists} == "yes" ]; then
-                if [ $(grep -c "SCRIPT_TIMEOUT=" ${t}) == 1 ] ; then
-                    cmd_timeout=$(grep "SCRIPT_TIMEOUT=" ${t} | cut -f2 -d'=');
+                # Only a real assignment counts (not a comment mentioning
+                # SCRIPT_TIMEOUT), only the numeric value is taken (not
+                # trailing comments), and the last assignment wins.
+                local script_timeout
+                script_timeout=$(sed -n \
+                    's/^[[:space:]]*SCRIPT_TIMEOUT=\([0-9][0-9]*\).*/\1/p' \
+                    ${t} | tail -1)
+                if [ -n "${script_timeout}" ] ; then
+                    cmd_timeout=${script_timeout}
                     echo "Timeout set is ${cmd_timeout}, default ${run_timeout}"
                 fi
             fi
