@@ -147,7 +147,18 @@ _GFS () {
 }
 GFS="_GFS --attribute-timeout=0 --entry-timeout=0";
 
-mkdir -p $WORKDIRS
+# Do not mkdir a workdir that is already a mountpoint: if it is mounted the
+# directory exists by definition, and the path lookup implied by mkdir -p
+# can hang in the kernel (D state) on a stale fuse mount left behind by an
+# earlier killed test - which then wedges every subsequent run before its
+# first test line executes (see issue #4610).  Live mounts are deliberately
+# not touched here: cleanup() is the place that unmounts.
+for _d in $WORKDIRS; do
+        awk -v d="$_d" '$2 == d { found = 1 } END { exit !found }' \
+                /proc/mounts 2>/dev/null && continue
+        mkdir -p "$_d"
+done
+unset _d
 
 case $OSTYPE in
 FreeBSD | Darwin)
