@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <libgen.h>
 #include <sys/param.h> /* for PATH_MAX */
 #include <unistd.h>
 

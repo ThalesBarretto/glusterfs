@@ -12,6 +12,7 @@
 #include <glusterfs/glusterfs.h>
 #include <glusterfs/logging.h>
 #include <glusterfs/syscall.h>
+#include <libgen.h>
 
 #include "gf-changelog-helpers.h"
 #include "gf-changelog-journal.h"

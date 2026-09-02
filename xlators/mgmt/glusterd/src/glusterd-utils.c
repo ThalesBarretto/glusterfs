@@ -11,6 +11,7 @@
 
 #if defined(GF_LINUX_HOST_OS)
 #include <mntent.h>
+#include <paths.h> /* _PATH_MOUNTED: musl's <mntent.h> does not include it */
 #else
 #include "mntent_compat.h"
 #endif

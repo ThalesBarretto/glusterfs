@@ -1848,6 +1848,8 @@ changelog_fill_entry_buf(call_frame_t *frame, xlator_t *this, loc_t *loc,
     co++;
 
     dup_path = gf_strdup(loc->path);
+    if (!dup_path)
+        goto err;
     bname = basename(dup_path);
 
     CHANGELOG_FILL_ENTRY(co, parent->gfid, bname, entry_fn, entry_free_fn,

@@ -19,7 +19,6 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <stdio.h>
-#include "glusterfs/compat.h"
 
 /* GF follows the Linux XATTR definition, which differs in Darwin. */
 #define GF_XATTR_CREATE 0x1  /* set value, fail if attr already exists */

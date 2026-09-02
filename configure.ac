@@ -1447,7 +1447,8 @@ case $host_os in
         GF_HOST_OS="GF_LINUX_HOST_OS"
         GF_FUSE_CFLAGS="-DFUSERMOUNT_DIR=\\\"\$(bindir)\\\""
         GLUSTERD_WORKDIR="${LOCALSTATEDIR}/lib/glusterd"
-        GF_CFLAGS="${GF_CFLAGS} -I/usr/include/arch/common -DREDEFINE_QUAD_T"
+        dnl libucontext-dev < 1.5 (Alpine 3.21/3.22) installs libucontext/bits.h under arch/common
+        GF_CFLAGS="${GF_CFLAGS} -I/usr/include/arch/common"
         GF_LDADD="${ARGP_LDADD}"
         ;;
      linux*)
@@ -1726,6 +1727,8 @@ AC_SEARCH_LIBS([inet_net_pton], [resolv bsd],
     [AC_MSG_ERROR([inet_net_pton() not found; install libbsd-dev])])
 LIBS="$saved_LIBS"
 AC_SUBST(RESOLV_LIBS)
+dnl musl has no inet_net_pton() declaration; libbsd declares it only in <bsd/arpa/inet.h>
+AC_CHECK_DECLS([inet_net_pton], [], [], [[#include <arpa/inet.h>]])
 
 dnl swapcontext()/makecontext(): in libc on glibc; musl needs libucontext
 saved_LIBS="$LIBS"
@@ -1734,6 +1737,19 @@ AC_SEARCH_LIBS([swapcontext], [ucontext],
     [AC_MSG_ERROR([swapcontext() not found; install libucontext-dev])])
 LIBS="$saved_LIBS"
 AC_SUBST(UCONTEXT_LIBS)
+
+dnl external tools glusterd execs by absolute path: discover at configure time
+dnl (busybox has /bin/stat, zfs may live in /usr/sbin); the C fallbacks are the old literals.
+dnl Cross-builders preset the target paths: ZFS_COMMAND=/usr/sbin/zfs ./configure ...
+AC_ARG_VAR([ZFS_COMMAND], [absolute path of the zfs binary on the target host])
+AC_ARG_VAR([STAT_COMMAND], [absolute path of the stat binary on the target host])
+AC_ARG_VAR([FIND_COMMAND], [absolute path of the find binary on the target host])
+AC_PATH_PROG([ZFS_COMMAND], [zfs], [/sbin/zfs], [$PATH$PATH_SEPARATOR/sbin$PATH_SEPARATOR/usr/sbin])
+AC_PATH_PROG([STAT_COMMAND], [stat], [/usr/bin/stat], [$PATH$PATH_SEPARATOR/bin$PATH_SEPARATOR/usr/bin])
+AC_PATH_PROG([FIND_COMMAND], [find], [/usr/bin/find], [$PATH$PATH_SEPARATOR/bin$PATH_SEPARATOR/usr/bin])
+AC_DEFINE_UNQUOTED([ZFS_COMMAND], ["$ZFS_COMMAND"], [zfs binary used by the snapshot plugin])
+AC_DEFINE_UNQUOTED([STAT_COMMAND], ["$STAT_COMMAND"], [stat binary used by the quota crawl])
+AC_DEFINE_UNQUOTED([FIND_COMMAND], ["$FIND_COMMAND"], [find binary used by the quota crawl])
 
 # EC dynamic code generation section
 

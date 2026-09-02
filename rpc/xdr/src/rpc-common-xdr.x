@@ -27,7 +27,7 @@ struct auth_glusterfs_parms_v2 {
 };
 
 struct auth_glusterfs_parms {
-        u_quad_t lk_owner;
+        uint64_t lk_owner;
         unsigned int pid;
         unsigned int uid;
 	unsigned int gid;
@@ -36,7 +36,7 @@ struct auth_glusterfs_parms {
 };
 
 struct gf_dump_req {
-	u_quad_t gfs_id;
+	uint64_t gfs_id;
 };
 
 struct gf_statedump {
@@ -45,14 +45,14 @@ struct gf_statedump {
 
 struct gf_prog_detail {
 	string progname<>;
-	u_quad_t prognum;
-	u_quad_t progver;
+	uint64_t prognum;
+	uint64_t progver;
 	struct gf_prog_detail *next;
 };
 
 
 struct gf_dump_rsp {
-        u_quad_t gfs_id;
+        uint64_t gfs_id;
         int op_ret;
 	int op_errno;
 	struct gf_prog_detail *prog;

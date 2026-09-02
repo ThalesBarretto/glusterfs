@@ -12,6 +12,7 @@
 #include <glusterfs/globals.h>
 #include <glusterfs/glusterfs.h>
 #include <glusterfs/syscall.h>
+#include <libgen.h>
 #include <glusterfs/compat-errno.h>
 
 #include "gf-changelog-helpers.h"

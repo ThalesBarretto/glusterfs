@@ -25,7 +25,7 @@
 bool_t
 xdr_gfx_dirlist_custom(XDR *xdrs, gfx_dirlist *objp)
 {
-    if (xdr_u_quad_t(xdrs, &objp->d_ino) && xdr_u_quad_t(xdrs, &objp->d_off) &&
+    if (xdr_uint64_t(xdrs, &objp->d_ino) && xdr_uint64_t(xdrs, &objp->d_off) &&
         xdr_u_int(xdrs, &objp->d_len) && xdr_u_int(xdrs, &objp->d_type) &&
         xdr_string(xdrs, &objp->name, ~0)) {
         return TRUE;
@@ -59,7 +59,7 @@ xdr_gfx_readdir_rsp_custom(XDR *xdrs, gfx_readdir_rsp *objp)
 bool_t
 xdr_gfx_dirplist_custom(XDR *xdrs, gfx_dirplist *objp)
 {
-    if (xdr_u_quad_t(xdrs, &objp->d_ino) && xdr_u_quad_t(xdrs, &objp->d_off) &&
+    if (xdr_uint64_t(xdrs, &objp->d_ino) && xdr_uint64_t(xdrs, &objp->d_off) &&
         xdr_u_int(xdrs, &objp->d_len) && xdr_u_int(xdrs, &objp->d_type) &&
         xdr_string(xdrs, &objp->name, ~0) && xdr_gfx_iattx(xdrs, &objp->stat) &&
         xdr_gfx_dict(xdrs, &objp->dict)) {

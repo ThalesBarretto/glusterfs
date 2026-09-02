@@ -92,7 +92,7 @@ typedef long long mount_flag_t;
 #define _PATH_MOUNT "/sbin/mount"
 #endif
 
-#include "glusterfs/compat.h"
+#include <paths.h>
 #ifdef FUSE_UTIL
 #define MALLOC(size) malloc (size)
 #define FREE(ptr) free (ptr)

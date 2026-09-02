@@ -16,31 +16,31 @@
 #define GF_REQUEST_MAXGROUPS 16
 
 struct gf_statfs {
-    u_quad_t bsize;
-    u_quad_t frsize;
-    u_quad_t blocks;
-    u_quad_t bfree;
-    u_quad_t bavail;
-    u_quad_t files;
-    u_quad_t ffree;
-    u_quad_t favail;
-    u_quad_t fsid;
-    u_quad_t flag;
-    u_quad_t namemax;
+    uint64_t bsize;
+    uint64_t frsize;
+    uint64_t blocks;
+    uint64_t bfree;
+    uint64_t bavail;
+    uint64_t files;
+    uint64_t ffree;
+    uint64_t favail;
+    uint64_t fsid;
+    uint64_t flag;
+    uint64_t namemax;
 };
 
 struct gf_iatt {
     opaque ia_gfid[16];
-    u_quad_t ia_ino;            /* inode number */
-    u_quad_t ia_dev;            /* backing device ID */
+    uint64_t ia_ino;            /* inode number */
+    uint64_t ia_dev;            /* backing device ID */
     unsigned int mode;          /* mode (type + protection )*/
     unsigned int ia_nlink;      /* Link count */
     unsigned int ia_uid;        /* user ID of owner */
     unsigned int ia_gid;        /* group ID of owner */
-    u_quad_t ia_rdev;           /* device ID (if special file) */
-    u_quad_t ia_size;           /* file size in bytes */
+    uint64_t ia_rdev;           /* device ID (if special file) */
+    uint64_t ia_size;           /* file size in bytes */
     unsigned int ia_blksize;    /* blocksize for filesystem I/O */
-    u_quad_t ia_blocks;         /* number of 512B blocks allocated */
+    uint64_t ia_blocks;         /* number of 512B blocks allocated */
     unsigned int ia_atime;      /* last access time */
     unsigned int ia_atime_nsec;
     unsigned int ia_mtime;      /* last modification time */
@@ -53,20 +53,20 @@ struct gf_iatt {
 struct gfx_iattx {
     opaque ia_gfid[16];
 
-    unsigned hyper ia_flags;
-    unsigned hyper ia_ino;             /* inode number */
-    unsigned hyper ia_dev;             /* backing device ID */
-    unsigned hyper ia_rdev;            /* device ID (if special file) */
-    unsigned hyper ia_size;            /* file size in bytes */
-    unsigned hyper ia_blocks;          /* number of 512B blocks allocated */
-    unsigned hyper ia_attributes;      /* chattr related:compressed, immutable,
+    uint64_t ia_flags;
+    uint64_t ia_ino;             /* inode number */
+    uint64_t ia_dev;             /* backing device ID */
+    uint64_t ia_rdev;            /* device ID (if special file) */
+    uint64_t ia_size;            /* file size in bytes */
+    uint64_t ia_blocks;          /* number of 512B blocks allocated */
+    uint64_t ia_attributes;      /* chattr related:compressed, immutable,
                                         * append only, encrypted etc.*/
-    unsigned hyper ia_attributes_mask; /* Mask for the attributes */
+    uint64_t ia_attributes_mask; /* Mask for the attributes */
 
-    hyper ia_atime; /* last access time */
-    hyper ia_mtime; /* last modification time */
-    hyper ia_ctime; /* last status change time */
-    hyper ia_btime; /* creation time. Fill using statx */
+    int64_t ia_atime; /* last access time */
+    int64_t ia_mtime; /* last modification time */
+    int64_t ia_ctime; /* last status change time */
+    int64_t ia_btime; /* creation time. Fill using statx */
 
     unsigned int ia_atime_nsec;
     unsigned int ia_mtime_nsec;
@@ -80,9 +80,9 @@ struct gfx_iattx {
 };
 
 struct gfx_mdata_iatt {
-    hyper ia_atime; /* last access time */
-    hyper ia_mtime; /* last modification time */
-    hyper ia_ctime; /* last status change time */
+    int64_t ia_atime; /* last access time */
+    int64_t ia_mtime; /* last modification time */
+    int64_t ia_ctime; /* last status change time */
 
     unsigned int ia_atime_nsec;
     unsigned int ia_mtime_nsec;
@@ -91,9 +91,9 @@ struct gfx_mdata_iatt {
 
 union gfx_value switch (int type) {
     case GF_DATA_TYPE_INT:
-        hyper value_int;
+        int64_t value_int;
     case GF_DATA_TYPE_UINT:
-        unsigned hyper value_uint;
+        uint64_t value_uint;
     case GF_DATA_TYPE_DOUBLE:
         double value_dbl;
     case GF_DATA_TYPE_STR:
@@ -112,8 +112,8 @@ union gfx_value switch (int type) {
 struct gf_proto_flock {
     unsigned int type;
     unsigned int whence;
-    u_quad_t start;
-    u_quad_t len;
+    uint64_t start;
+    uint64_t len;
     unsigned int pid;
     opaque lk_owner<>;
 };
@@ -159,7 +159,7 @@ struct auth_glusterfs_params_v3 {
 
     /* birth time of the frame / call */
     unsigned int ctime_nsec; /* good to have 32bit for this */
-    unsigned hyper ctime_sec;
+    uint64_t ctime_sec;
 
     unsigned int groups<>;
     opaque lk_owner<>;
@@ -209,7 +209,7 @@ struct gfx_common_3iatt_rsp {
 
 struct gfx_fsetattr_req {
     opaque gfid[16];
-    hyper fd;
+    int64_t fd;
     gfx_iattx stbuf;
     int valid;
     gfx_dict xdata; /* Extra data */
@@ -217,8 +217,8 @@ struct gfx_fsetattr_req {
 
 struct gfx_rchecksum_req {
     opaque gfid[16];
-    hyper fd;
-    unsigned hyper offset;
+    int64_t fd;
+    uint64_t offset;
     unsigned int len;
     unsigned int flags;
     gfx_dict xdata; /* Extra data */
@@ -236,7 +236,7 @@ struct gfx_put_req {
     unsigned int mode;
     unsigned int umask;
     unsigned int flag;
-    u_quad_t offset;
+    uint64_t offset;
     unsigned int size;
     gfx_dict xattr;
     gfx_dict xdata;
@@ -275,7 +275,7 @@ struct gfx_readlink_rsp {
 
 struct gfx_mknod_req {
     opaque pargfid[16];
-    u_quad_t dev;
+    uint64_t dev;
     unsigned int mode;
     unsigned int umask;
     string bname<>; /* NULL terminated */
@@ -340,7 +340,7 @@ struct gfx_link_req {
 
 struct gfx_truncate_req {
     opaque gfid[16];
-    u_quad_t offset;
+    uint64_t offset;
     gfx_dict xdata; /* Extra data */
 };
 
@@ -354,7 +354,7 @@ struct gfx_open_rsp {
     int op_ret;
     int op_errno;
     gfx_dict xdata; /* Extra data */
-    quad_t fd;
+    int64_t fd;
 };
 
 struct gfx_opendir_req {
@@ -364,8 +364,8 @@ struct gfx_opendir_req {
 
 struct gfx_read_req {
     opaque gfid[16];
-    quad_t fd;
-    u_quad_t offset;
+    int64_t fd;
+    uint64_t offset;
     unsigned int size;
     unsigned int flag;
     gfx_dict xdata; /* Extra data */
@@ -388,8 +388,8 @@ struct gfx_lookup_req {
 
 struct gfx_write_req {
     opaque gfid[16];
-    quad_t fd;
-    u_quad_t offset;
+    int64_t fd;
+    uint64_t offset;
     unsigned int size;
     unsigned int flag;
     gfx_dict xdata; /* Extra data */
@@ -452,7 +452,7 @@ struct gfx_inodelk_req {
 
 struct gfx_finodelk_req {
     opaque gfid[16];
-    quad_t fd;
+    int64_t fd;
     unsigned int cmd;
     unsigned int type;
     gf_proto_flock flock;
@@ -462,13 +462,13 @@ struct gfx_finodelk_req {
 
 struct gfx_flush_req {
     opaque gfid[16];
-    quad_t fd;
+    int64_t fd;
     gfx_dict xdata; /* Extra data */
 };
 
 struct gfx_fsync_req {
     opaque gfid[16];
-    quad_t fd;
+    int64_t fd;
     unsigned int data;
     gfx_dict xdata; /* Extra data */
 };
@@ -506,7 +506,7 @@ struct gfx_common_dict_rsp {
 
 struct gfx_fxattrop_req {
     opaque gfid[16];
-    quad_t fd;
+    int64_t fd;
     unsigned int flags;
     gfx_dict dict;
     gfx_dict xdata; /* Extra data */
@@ -521,7 +521,7 @@ struct gfx_getxattr_req {
 
 struct gfx_fgetxattr_req {
     opaque gfid[16];
-    quad_t fd;
+    int64_t fd;
     unsigned int namelen;
     string name<>;
     gfx_dict xdata; /* Extra data */
@@ -535,30 +535,30 @@ struct gfx_removexattr_req {
 
 struct gfx_fremovexattr_req {
     opaque gfid[16];
-    quad_t fd;
+    int64_t fd;
     string name<>;
     gfx_dict xdata; /* Extra data */
 };
 
 struct gfx_fsyncdir_req {
     opaque gfid[16];
-    quad_t fd;
+    int64_t fd;
     int data;
     gfx_dict xdata; /* Extra data */
 };
 
 struct gfx_readdir_req {
     opaque gfid[16];
-    quad_t fd;
-    u_quad_t offset;
+    int64_t fd;
+    uint64_t offset;
     unsigned int size;
     gfx_dict xdata; /* Extra data */
 };
 
 struct gfx_readdirp_req {
     opaque gfid[16];
-    quad_t fd;
-    u_quad_t offset;
+    int64_t fd;
+    uint64_t offset;
     unsigned int size;
     gfx_dict xdata;
 };
@@ -582,21 +582,21 @@ struct gfx_create_rsp {
     int op_errno;
     gfx_dict xdata; /* Extra data */
     gfx_iattx stat;
-    u_quad_t fd;
+    uint64_t fd;
     gfx_iattx preparent;
     gfx_iattx postparent;
 };
 
 struct gfx_ftruncate_req {
     opaque gfid[16];
-    quad_t fd;
-    u_quad_t offset;
+    int64_t fd;
+    uint64_t offset;
     gfx_dict xdata; /* Extra data */
 };
 
 struct gfx_fstat_req {
     opaque gfid[16];
-    quad_t fd;
+    int64_t fd;
     gfx_dict xdata; /* Extra data */
 };
 
@@ -604,7 +604,7 @@ struct gfx_entrylk_req {
     opaque gfid[16];
     unsigned int cmd;
     unsigned int type;
-    u_quad_t namelen;
+    uint64_t namelen;
     string name<>;
     string volume<>;
     gfx_dict xdata; /* Extra data */
@@ -612,10 +612,10 @@ struct gfx_entrylk_req {
 
 struct gfx_fentrylk_req {
     opaque gfid[16];
-    quad_t fd;
+    int64_t fd;
     unsigned int cmd;
     unsigned int type;
-    u_quad_t namelen;
+    uint64_t namelen;
     string name<>;
     string volume<>;
     gfx_dict xdata; /* Extra data */
@@ -630,26 +630,26 @@ struct gfx_setattr_req {
 
 struct gfx_fallocate_req {
     opaque gfid[16];
-    quad_t fd;
+    int64_t fd;
     unsigned int flags;
-    u_quad_t offset;
-    u_quad_t size;
+    uint64_t offset;
+    uint64_t size;
     gfx_dict xdata; /* Extra data */
 };
 
 struct gfx_discard_req {
     opaque gfid[16];
-    quad_t fd;
-    u_quad_t offset;
-    u_quad_t size;
+    int64_t fd;
+    uint64_t offset;
+    uint64_t size;
     gfx_dict xdata; /* Extra data */
 };
 
 struct gfx_zerofill_req {
     opaque gfid[16];
-    quad_t fd;
-    u_quad_t offset;
-    u_quad_t size;
+    int64_t fd;
+    uint64_t offset;
+    uint64_t size;
     gfx_dict xdata;
 };
 
@@ -669,8 +669,8 @@ struct gfx_ipc_req {
 
 struct gfx_seek_req {
     opaque gfid[16];
-    quad_t fd;
-    u_quad_t offset;
+    int64_t fd;
+    uint64_t offset;
     int what;
     gfx_dict xdata;
 };
@@ -679,7 +679,7 @@ struct gfx_seek_rsp {
     int op_ret;
     int op_errno;
     gfx_dict xdata;
-    u_quad_t offset;
+    uint64_t offset;
 };
 
 struct gfx_setvolume_req {
@@ -689,10 +689,10 @@ struct gfx_setvolume_req {
 struct gfx_copy_file_range_req {
     opaque gfid1[16];
     opaque gfid2[16];
-    quad_t fd_in;
-    quad_t fd_out;
-    u_quad_t off_in;
-    u_quad_t off_out;
+    int64_t fd_in;
+    int64_t fd_out;
+    uint64_t off_in;
+    uint64_t off_out;
     unsigned int size;
     unsigned int flag;
     gfx_dict xdata; /* Extra data */
@@ -731,21 +731,21 @@ struct gfx_notify_rsp {
 
 struct gfx_releasedir_req {
     opaque gfid[16];
-    quad_t fd;
+    int64_t fd;
     gfx_dict xdata; /* Extra data */
 };
 
 struct gfx_release_req {
     opaque gfid[16];
-    quad_t fd;
+    int64_t fd;
     gfx_dict xdata; /* Extra data */
 };
 
 /* This structure cannot be modified without also modifying the corresponding
  * functions in xdr-custom.c. */
 struct gfx_dirlist {
-    u_quad_t d_ino;
-    u_quad_t d_off;
+    uint64_t d_ino;
+    uint64_t d_off;
     unsigned int d_len;
     unsigned int d_type;
     string name<>;
@@ -764,8 +764,8 @@ struct gfx_readdir_rsp {
 /* This structure cannot be modified without also modifying the corresponding
  * functions in xdr-custom.c. */
 struct gfx_dirplist {
-    u_quad_t d_ino;
-    u_quad_t d_off;
+    uint64_t d_ino;
+    uint64_t d_off;
     unsigned int d_len;
     unsigned int d_type;
     string name<>;
