@@ -207,7 +207,11 @@ function dbg()
 function G_LOG()
 {
      local g_log_logdir;
-     g_log_logdir=`$CLI --print-logdir`
+     # LOGDIR is computed once at source time with this same command.
+     # G_LOG runs for every TEST/EXPECT line in the suite (~21000 per
+     # full regression run), so re-executing the CLI here cost minutes
+     # of pure fork/exec per run for a value that cannot change.
+     g_log_logdir=${LOGDIR}
      test -d $g_log_logdir
      if [ $? != 0 ]; then
         return
