@@ -3,6 +3,15 @@
 #
 
 export TZ=UTC
+
+# This script is routinely run as '... | tee logfile'.  Ctrl-C then kills
+# tee together with us, and any subsequent write to stdout/stderr would
+# kill this script with SIGPIPE in the middle of terminating and sweeping
+# the running test - leaving the test tree orphaned, which is the very
+# bug this harness exists to prevent.  With SIGPIPE ignored such writes
+# fail benignly with EPIPE instead, and supervision runs to completion.
+trap '' PIPE
+
 force="no"
 head="yes"
 retry="yes"
@@ -381,10 +390,13 @@ function run_one_test()
 
     timeout -k ${kill_after_time} ${cmd_timeout} prove -vmfe '/bin/bash' ${t} &
     tpid=$!
+    # Forward FIRST, then talk: an interrupt that also killed our log
+    # consumer leaves stdout/stderr as dead pipes, and although SIGPIPE
+    # is ignored the message is best-effort while the forward is not.
     trap 'interrupted="yes";
-          echo "Interrupted: terminating ${t} and running its cleanup (repeat to force-kill) ..." >&2;
           kill -TERM ${tpid} 2>/dev/null;
-          trap "kill -KILL -${tpid} 2>/dev/null" INT TERM HUP' INT TERM HUP
+          trap "kill -KILL -${tpid} 2>/dev/null" INT TERM HUP;
+          echo "Interrupted: terminating ${t} and running its cleanup (repeat to force-kill) ..." >&2' INT TERM HUP
     wait ${tpid}
     rc=$?
     # When the trap interrupts 'wait', rc is 128+sig rather than the
