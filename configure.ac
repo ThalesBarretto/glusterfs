@@ -1103,15 +1103,14 @@ dnl check for argp, FreeBSD has the header in /usr/local/include
 case $host_os in
     *freebsd*)
     CFLAGS="${CFLAGS} -isystem /usr/local/include"
-    ARGP_LDADD=-largp
-    ;;
-    *netbsd*)
-    ARGP_LDADD=-largp
-    ;;
-    linux-musl*)
-    ARGP_LDADD=-largp
     ;;
 esac
+dnl argp is in libc on glibc; FreeBSD/NetBSD/musl ship it as argp-standalone
+saved_LIBS="$LIBS"
+AC_SEARCH_LIBS([argp_parse], [argp],
+    [test "x$ac_cv_search_argp_parse" = "xnone required" || ARGP_LDADD="$ac_cv_search_argp_parse"],
+    [AC_MSG_ERROR([argp_parse() not found; install argp-standalone])])
+LIBS="$saved_LIBS"
 dnl argp-standalone does not provide a pkg-config file
 AC_CHECK_HEADER([argp.h], AC_DEFINE(HAVE_ARGP, 1, [have argp]))
 if test "x$ac_cv_header_argp_h" != "xyes"; then
@@ -1449,7 +1448,6 @@ case $host_os in
         GF_FUSE_CFLAGS="-DFUSERMOUNT_DIR=\\\"\$(bindir)\\\""
         GLUSTERD_WORKDIR="${LOCALSTATEDIR}/lib/glusterd"
         GF_CFLAGS="${GF_CFLAGS} -I/usr/include/arch/common -DREDEFINE_QUAD_T"
-        GF_LDFLAGS="-lbsd -lucontext ${GF_LDFLAGS}"
         GF_LDADD="${ARGP_LDADD}"
         ;;
      linux*)
@@ -1721,17 +1719,21 @@ AC_SUBST(UNITTEST_LDFLAGS)
 AC_SUBST(CFLAGS)
 # end enable debug section
 
-dnl do not add -lresolv for freebsd
-case $host_os in
-  freebsd*)
-    RESOLV_LIBS=""
-    ;;
-  *)
-    RESOLV_LIBS="-lresolv"
-    ;;
-esac
-
+dnl inet_net_pton(): glibc has it in libresolv, musl needs libbsd, FreeBSD has it in libc
+saved_LIBS="$LIBS"
+AC_SEARCH_LIBS([inet_net_pton], [resolv bsd],
+    [test "x$ac_cv_search_inet_net_pton" = "xnone required" || RESOLV_LIBS="$ac_cv_search_inet_net_pton"],
+    [AC_MSG_ERROR([inet_net_pton() not found; install libbsd-dev])])
+LIBS="$saved_LIBS"
 AC_SUBST(RESOLV_LIBS)
+
+dnl swapcontext()/makecontext(): in libc on glibc; musl needs libucontext
+saved_LIBS="$LIBS"
+AC_SEARCH_LIBS([swapcontext], [ucontext],
+    [test "x$ac_cv_search_swapcontext" = "xnone required" || UCONTEXT_LIBS="$ac_cv_search_swapcontext"],
+    [AC_MSG_ERROR([swapcontext() not found; install libucontext-dev])])
+LIBS="$saved_LIBS"
+AC_SUBST(UCONTEXT_LIBS)
 
 # EC dynamic code generation section
 
