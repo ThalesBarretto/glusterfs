@@ -13,7 +13,14 @@ skip_known_bugs="yes"
 result_output="/tmp/gluster_regression.txt"
 section_separator="========================================"
 run_timeout=200
-kill_after_time=5
+# Grace given to a signalled test to finish cleaning up.  Used twice by
+# run_one_test: as timeout's -k (SIGKILL if prove survives the SIGTERM) and
+# as the time the test's process group gets to drain after 'timeout'
+# returns, which is the budget force_terminate (tests/include.rc) has to
+# run 'cleanup' (unmounts, daemon shutdown, volume/zpool teardown) before
+# the group is force-killed.  It must fit a full cleanup, not just a
+# signal round-trip.
+kill_after_time=60
 nfs_tests=$RUN_NFS_TESTS
 list_only="no"
 secho="echo"
@@ -325,6 +332,114 @@ function get_bug_list_for_disabled_test ()
 
 }
 
+# Run one test file under 'prove', supervised by 'timeout'.
+#
+# 'timeout' is deliberately NOT given --foreground: without it, 'timeout'
+# runs the test in a dedicated process group and, on expiry, delivers
+# SIGTERM (and, ${kill_after_time} seconds later, SIGKILL) to that whole
+# group, so the bash executing the test file receives the signal and its
+# force_terminate trap (tests/include.rc) gets to run 'cleanup'.  With
+# --foreground only the direct child (prove) was signalled: the test
+# script survived as an orphan, keeping mounts and daemons alive and
+# wedging the next run (see issue #4610).
+#
+# Because the test group is then no longer the terminal's foreground
+# group, Ctrl-C (and TERM/HUP from CI) land on this script instead of the
+# test.  The trap below forwards the interrupt to 'timeout' as SIGTERM,
+# which 'timeout' propagates to the test's group; the run is aborted once
+# the group has drained (see the grace loop below).  A second interrupt
+# escalates to SIGKILL of the whole group ('timeout' is the group leader,
+# so the group is addressable as -pid).
+#
+# The interrupt is forwarded as SIGTERM, not SIGINT, on purpose: coreutils
+# >= 9.x 'timeout' ignores an external SIGINT when running without
+# --foreground (coreutils <= 8.32 forwarded it), while SIGTERM behaves the
+# same on every toolchain, and the include.rc trap handles both alike.
+#
+# Even so, the signalled test may die before its trap can run: when the
+# group SIGTERM kills the test's current foreground command, bash emits
+# its job notice ("Terminated") to the test's stderr - a pipe owned by
+# prove, which just died of the same SIGTERM - so that write is a
+# coin-flip SIGPIPE that kills the test shell before the trap runs
+# (observed with strace: write(2, "Terminated\n") = EPIPE, killed by
+# SIGPIPE).  That is why, after the group has drained or been killed,
+# the environment is additionally swept below by running 'cleanup' on
+# the test's behalf; cleanup is idempotent (tests run it at entry and
+# exit), so sweeping after a cleanup that did run is harmless.
+function run_one_test()
+{
+    local t="$1"
+    local cmd_timeout="$2"
+    local tpid
+    local rc
+    local interrupted=""
+
+    if [ ${timeout_cmd_exists} != "yes" ]; then
+        prove -vmfe '/bin/bash' ${t}
+        return $?
+    fi
+
+    timeout -k ${kill_after_time} ${cmd_timeout} prove -vmfe '/bin/bash' ${t} &
+    tpid=$!
+    trap 'interrupted="yes";
+          echo "Interrupted: terminating ${t} and running its cleanup (repeat to force-kill) ..." >&2;
+          kill -TERM ${tpid} 2>/dev/null;
+          trap "kill -KILL -${tpid} 2>/dev/null" INT TERM HUP' INT TERM HUP
+    wait ${tpid}
+    rc=$?
+    # When the trap interrupts 'wait', rc is 128+sig rather than the
+    # child's real status.  Do NOT loop on 'wait' to fetch it: once a
+    # trapped signal has interrupted 'wait', bash may keep returning
+    # 128+sig from subsequent 'wait' builtins, which livelocks.  The
+    # group drain below supervises the child's whole process group
+    # anyway, and on the interrupt path the run is aborted regardless.
+    # 'timeout' exits as soon as its direct child (prove) dies, but the
+    # test's process group can outlive both: after the group SIGTERM the
+    # test script is still running force_terminate/cleanup.  Do not start
+    # the next test (or the retry) on top of that: give the group
+    # ${kill_after_time} seconds to drain when a cleanup may be running
+    # (timeout or interrupt), then force-kill the leftovers.  The group is
+    # addressable as -tpid because 'timeout' led it.
+    local waited=0
+    if [ ${rc} -eq 124 ] || [ -n "${interrupted}" ]; then
+        while kill -0 -${tpid} 2>/dev/null; do
+            if [ ${waited} -ge ${kill_after_time} ]; then
+                echo "Test group of ${t} still busy after ${kill_after_time}s grace, force-killing it" >&2
+                break
+            fi
+            sleep 1
+            waited=$((waited+1))
+        done
+    fi
+    kill -KILL -${tpid} 2>/dev/null
+    if [ ${rc} -eq 124 ] || [ -n "${interrupted}" ]; then
+        # Sweep the environment in case the test died before (or while)
+        # running 'cleanup' - see the SIGPIPE note above.  Stale fuse
+        # mounts are detached before include.rc is sourced, because its
+        # source-time 'mkdir -p $WORKDIRS' can hang on a dead mount; the
+        # whole sweep is bounded by 'timeout' for the same reason.
+        echo "Sweeping the test environment after ${t}" >&2
+        # ${t} is passed as $0: include.rc locates env.rc by walking up
+        # from $0's directory.  include.rc itself is addressed through
+        # ${regression_testsdir} so the sweep works regardless of $PWD.
+        timeout -k 5 ${kill_after_time} bash -c '
+            for m in $(grep -w fuse.glusterfs /proc/mounts 2>/dev/null |
+                       awk "{print \$2}"); do
+                umount -l "$m" 2>/dev/null
+            done
+            . "$1" >/dev/null 2>&1
+            cleanup >/dev/null 2>&1' "${t}" \
+            "${regression_testsdir}/tests/include.rc" >/dev/null 2>&1
+    fi
+    trap - INT TERM HUP
+    if [ -n "${interrupted}" ]; then
+        [ ${rc} -eq 0 ] && rc=130
+        echo "Aborting the run: interrupted while running ${t} (status ${rc})" >&2
+        exit ${rc}
+    fi
+    return ${rc}
+}
+
 function run_tests()
 {
     RES=0
@@ -401,10 +516,8 @@ function run_tests()
                     cmd_timeout=$(grep "SCRIPT_TIMEOUT=" ${t} | cut -f2 -d'=');
                     echo "Timeout set is ${cmd_timeout}, default ${run_timeout}"
                 fi
-                timeout --foreground -k ${kill_after_time} ${cmd_timeout} prove -vmfe '/bin/bash' ${t}
-            else
-                prove -vmfe '/bin/bash' ${t}
             fi
+            run_one_test ${t} ${cmd_timeout}
             TMP_RES=$?
             ELAPSEDTIMEMAP[$t]=`expr $(date +%s) - $starttime`
             tar_logs "$t"
@@ -424,11 +537,7 @@ function run_tests()
                 echo "       *********************************"
                 echo ""
 
-                if [ ${timeout_cmd_exists} == "yes" ]; then
-                    timeout --foreground -k ${kill_after_time} ${cmd_timeout} prove -vmfe '/bin/bash' ${t}
-                else
-                    prove -vmfe '/bin/bash' ${t}
-                fi
+                run_one_test ${t} ${cmd_timeout}
                 TMP_RES=$?
                 tar_logs "$t"
 
