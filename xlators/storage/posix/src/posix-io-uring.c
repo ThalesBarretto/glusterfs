@@ -125,7 +125,6 @@ posix_io_uring_readv_complete(struct posix_uring_ctx *ctx, int32_t res)
 {
     call_frame_t *frame = NULL;
     xlator_t *this = NULL;
-    struct posix_private *priv = NULL;
     struct iobref *iobref = NULL;
     struct iobuf *iobuf = NULL;
     struct iatt postbuf = {
@@ -143,7 +142,6 @@ posix_io_uring_readv_complete(struct posix_uring_ctx *ctx, int32_t res)
 
     frame = ctx->frame;
     this = frame->this;
-    priv = this->private;
     fd = ctx->fd;
     _fd = ctx->_fd;
     iobuf = ctx->fop.read.iobuf;
@@ -185,7 +183,6 @@ posix_io_uring_readv_complete(struct posix_uring_ctx *ctx, int32_t res)
     if (!postbuf.ia_size || (offset + iov.iov_len) >= postbuf.ia_size)
         op_errno = ENOENT;
 
-    GF_ATOMIC_ADD(priv->read_value, op_ret);
     // response xdata is used only for cloudsync, so ignore for now.
 out:
     STACK_UNWIND_STRICT(readv, frame, op_ret, op_errno, &iov, 1, &postbuf,
@@ -268,7 +265,6 @@ posix_io_uring_writev_complete(struct posix_uring_ctx *ctx, int32_t res)
 {
     call_frame_t *frame = NULL;
     xlator_t *this = NULL;
-    struct posix_private *priv = NULL;
     struct iatt postbuf = {
         0,
     };
@@ -280,7 +276,6 @@ posix_io_uring_writev_complete(struct posix_uring_ctx *ctx, int32_t res)
     dict_t *rsp_xdata = NULL;
     frame = ctx->frame;
     this = frame->this;
-    priv = this->private;
     fd = ctx->fd;
     _fd = ctx->_fd;
 
@@ -304,7 +299,6 @@ posix_io_uring_writev_complete(struct posix_uring_ctx *ctx, int32_t res)
     op_ret = res;
     op_errno = 0;
     posix_writev_fill_rsp_dict(ctx, this, fd, &rsp_xdata);
-    GF_ATOMIC_ADD(priv->write_value, op_ret);
 out:
     STACK_UNWIND_STRICT(writev, frame, op_ret, op_errno, &ctx->prebuf, &postbuf,
                         rsp_xdata);
@@ -363,7 +357,6 @@ posix_io_uring_fsync_complete(struct posix_uring_ctx *ctx, int32_t res)
 {
     call_frame_t *frame = NULL;
     xlator_t *this = NULL;
-    struct posix_private *priv = NULL;
     struct iatt postbuf = {
         0,
     };
@@ -375,7 +368,6 @@ posix_io_uring_fsync_complete(struct posix_uring_ctx *ctx, int32_t res)
 
     frame = ctx->frame;
     this = frame->this;
-    priv = this->private;
     fd = ctx->fd;
     _fd = ctx->_fd;
 
@@ -398,7 +390,6 @@ posix_io_uring_fsync_complete(struct posix_uring_ctx *ctx, int32_t res)
 
     op_ret = res;
     op_errno = 0;
-    GF_ATOMIC_ADD(priv->write_value, op_ret);
 out:
     STACK_UNWIND_STRICT(fsync, frame, op_ret, op_errno, &ctx->prebuf, &postbuf,
                         NULL);
