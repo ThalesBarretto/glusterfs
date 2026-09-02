@@ -781,8 +781,10 @@ function cleanup()
                 return 1;
         fi >&2
 
-        # Physically release unused space
-        fstrim /d
+        # NB: the fstrim that used to run here lives in run-tests.sh now:
+        # cleanup() runs at both test entry and exit, and fstrim's duration
+        # is unbounded on some devices, which stalled every path that waits
+        # for a cleanup to finish.
 
         mkdir -p $WORKDIRS
 	# This is usually the last thing a test script calls, so our return

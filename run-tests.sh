@@ -555,6 +555,17 @@ function run_tests()
                 TESTS_NEEDED_RETRY="${TESTS_NEEDED_RETRY}${t} "
             fi
 
+            # Physically release the space the test's cleanup freed, for
+            # devices that support discard (moved here from cleanup():
+            # cleanup runs at both test entry and exit, so this halves the
+            # calls, and fstrim's duration is unbounded on some devices,
+            # which would eat the post-timeout drain grace above).
+            if [ ${timeout_cmd_exists} == "yes" ]; then
+                timeout 60 fstrim /d 2>/dev/null
+            else
+                fstrim /d 2>/dev/null
+            fi
+
 
             if [ ${TMP_RES} -ne 0 ] ; then
 		if [[ "$t" == *"tests/000-flaky/"* ]]; then
