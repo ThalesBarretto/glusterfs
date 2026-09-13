@@ -11,6 +11,9 @@
 #ifndef __CHECKSUM_H__
 #define __CHECKSUM_H__
 
+#include <stddef.h> /* size_t */
+#include <stdint.h> /* uint32_t */
+
 uint32_t
 gf_rsync_weak_checksum(unsigned char *buf, size_t len);
 
