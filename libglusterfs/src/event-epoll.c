@@ -376,7 +376,16 @@ event_register_epoll(struct event_pool *event_pool, int fd,
         return -1;
     }
 
-    assert(slot->fd == fd);
+    if (caa_unlikely(slot->fd != fd)) {
+        /* The slot we were just handed does not hold our fd: the allocator
+         * gave the same slot out twice (bz#1763036 was such a race). Do not
+         * register into a slot that is not ours: give back the reference
+         * __event_slot_alloc() took and fail the registration. */
+        gf_smsg("epoll", GF_LOG_ERROR, 0, LG_MSG_SLOT_NOT_FOUND, "fd=%d", fd,
+                "slot->fd=%d", slot->fd, "idx=%d", idx, NULL);
+        event_slot_unref(event_pool, slot, idx);
+        return -1;
+    }
 
     LOCK(&slot->lock);
     {
@@ -429,8 +438,9 @@ event_unregister_epoll_common(struct event_pool *event_pool, int fd, int idx,
 
     /* During shutdown, it may happen that a socket registration with
      * the event sub-system may fail and an rpc_transport_unref() may
-     * be called for such an unregistered socket with idx == -1. This
-     * may cause the following assert(slot->fd == fd) to fail.
+     * be called for such an unregistered socket with idx == -1, which
+     * would address a slot that does not hold this fd (see the check
+     * below).
      */
     if (idx < 0)
         goto out;
@@ -442,7 +452,20 @@ event_unregister_epoll_common(struct event_pool *event_pool, int fd, int idx,
         return -1;
     }
 
-    assert(slot->fd == fd);
+    if (caa_unlikely(slot->fd != fd)) {
+        /* The idx was stale: the slot has been recycled for a different fd
+         * since the caller obtained idx. Bail out without touching the slot
+         * (continuing would unref the reused slot). */
+        gf_smsg("epoll", GF_LOG_ERROR, 0, LG_MSG_SLOT_NOT_FOUND, "fd=%d", fd,
+                "slot->fd=%d", slot->fd, "idx=%d", idx, NULL);
+        if (slot->fd == -1)
+            /* already deallocated: only give back the count we took */
+            GF_ATOMIC_DEC(slot->ref);
+        else
+            /* belongs to another registration: release exactly our ref */
+            event_slot_unref(event_pool, slot, idx);
+        return -1;
+    }
 
     LOCK(&slot->lock);
     {
@@ -499,7 +522,19 @@ event_select_on_epoll(struct event_pool *event_pool, int fd, int idx,
         return -1;
     }
 
-    assert(slot->fd == fd);
+    if (caa_unlikely(slot->fd != fd)) {
+        /* The idx was stale: the slot has been recycled for a different fd
+         * since the caller obtained idx. Bail out without touching the slot. */
+        gf_smsg("epoll", GF_LOG_ERROR, 0, LG_MSG_SLOT_NOT_FOUND, "fd=%d", fd,
+                "slot->fd=%d", slot->fd, "idx=%d", idx, NULL);
+        if (slot->fd == -1)
+            /* already deallocated: only give back the count we took */
+            GF_ATOMIC_DEC(slot->ref);
+        else
+            /* belongs to another registration: release exactly our ref */
+            event_slot_unref(event_pool, slot, idx);
+        return -1;
+    }
 
     LOCK(&slot->lock);
     {
@@ -955,7 +990,20 @@ event_handled_epoll(struct event_pool *event_pool, int fd, int idx, int gen)
         return -1;
     }
 
-    assert(slot->fd == fd);
+    if (caa_unlikely(slot->fd != fd)) {
+        /* The idx was stale: the slot has been recycled for a different fd
+         * while this handler ran. Bail out; the gen check below is designed
+         * for this case but must not be reached through a stale slot. */
+        gf_smsg("epoll", GF_LOG_ERROR, 0, LG_MSG_SLOT_NOT_FOUND, "fd=%d", fd,
+                "slot->fd=%d", slot->fd, "idx=%d", idx, NULL);
+        if (slot->fd == -1)
+            /* already deallocated: only give back the count we took */
+            GF_ATOMIC_DEC(slot->ref);
+        else
+            /* belongs to another registration: release exactly our ref */
+            event_slot_unref(event_pool, slot, idx);
+        return -1;
+    }
 
     LOCK(&slot->lock);
     {
