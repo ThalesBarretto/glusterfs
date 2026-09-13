@@ -11,6 +11,10 @@
 #ifndef _STRFD_H
 #define _STRFD_H
 
+#include <stdarg.h>    /* va_list */
+#include <stddef.h>    /* size_t */
+#include <sys/types.h> /* off_t, ssize_t */
+
 typedef struct {
     void *data;
     size_t alloc_size;
