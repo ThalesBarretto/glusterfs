@@ -399,7 +399,7 @@ glusterd_zfs_snapshot_dependents(glusterd_brickinfo_t *snap_brickinfo,
     char msg[1024] = "";
     int len;
     char snap_device[NAME_MAX] = "";
-    char *dataset = NULL;
+    char dataset[PATH_MAX] = "";
     char clones[4096] = "";
     char *ptr = NULL;
 
@@ -408,7 +408,8 @@ glusterd_zfs_snapshot_dependents(glusterd_brickinfo_t *snap_brickinfo,
 
     *has_dependent = _gf_false;
 
-    ret = glusterd_zfs_dataset(snap_brickinfo->origin_path, &dataset);
+    ret = glusterd_zfs_dataset(snap_brickinfo->origin_path, dataset,
+                               sizeof(dataset));
     if (ret) {
         /* Cannot resolve the dataset (e.g. the brick/backend is already
          * gone). Do not block the delete on an inconclusive check. */
@@ -416,9 +417,6 @@ glusterd_zfs_snapshot_dependents(glusterd_brickinfo_t *snap_brickinfo,
         goto out;
     }
 
-    /* glusterd_zfs_dataset() returns a pointer into a stack buffer, so the
-     * dataset name must be consumed immediately, before any other call can
-     * clobber it (mirrors glusterd_zfs_snapshot_remove). */
     len = snprintf(snap_device, sizeof(snap_device), "%s@%s_%d", dataset,
                    snap_volume_id, brick_num);
     if ((len < 0) || (len >= sizeof(snap_device))) {
