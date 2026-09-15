@@ -133,8 +133,11 @@ y.tab.c: y.tab.h
 y.tab.h: graph.y
 	$(YACC) -p graphyy -d $(srcdir)/graph.y
 
+# Disable bytecode writing: gen-defaults.py imports generator.py, so Python 3
+# would otherwise leave a __pycache__/ next to it in $(srcdir) (missed by an
+# in-tree clean, and never matched by the *.pyc glob below -- a Python 2 pattern).
 defaults.c: defaults-tmpl.c generator.py gen-defaults.py
-	$(PYTHON) $(srcdir)/gen-defaults.py $(srcdir)/defaults-tmpl.c > $@
+	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) $(srcdir)/gen-defaults.py $(srcdir)/defaults-tmpl.c > $@
 
 CLEANFILES = $(nodist_libglusterfs_la_SOURCES) \
 	$(nodist_libglusterfs_la_HEADERS) *.pyc
