@@ -7050,6 +7050,10 @@ retrynew:
 
     ESTALE_RETRY(ret, errno, reval, &newloc, retrynew);
 
+    if (!newsubvol) {
+        goto out;
+    }
+
     if (newsubvol && newloc.inode) {
         ret = -1;
         errno = EEXIST;
