@@ -1526,8 +1526,13 @@ pub_glfs_fini(struct glfs *fs)
      * objects.  The requirement to close all fds before calling
      * glfs_fini is not documented in glfs.h — this drain makes
      * the library resilient to consumers that violate it.
+     *
+     * Only when glfs_init() ran: without it nothing can have been
+     * opened, and glfs_lock() inside the drain would wait for
+     * fs->init forever (tests/basic/gfapi/libgfapi-fini-hang.t).
      */
-    glfs_drain_openfds(fs);
+    if (fs_init != 0)
+        glfs_drain_openfds(fs);
 
     if (fs_init != 0) {
         /* Destroy all the inode tables of all the graphs.
