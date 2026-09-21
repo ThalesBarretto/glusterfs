@@ -41,7 +41,13 @@ TEST $CLI_1 snapshot config $V0 snap-max-hard-limit 4
 TEST $CLI_1 snapshot config snap-max-soft-limit 50
 TEST $CLI_1 snapshot config auto-delete enable
 
+# The auto-delete order is the snapshots' creation time in whole seconds
+# (glusterd_compare_snap_vol_time over time_t), and the ordered insert puts a
+# tied newcomer BEFORE the existing entry, so two snapshots created within the
+# same second sort newest-first and "the oldest over-limit snapshot" is not
+# the one this test means. Keep every create in its own second.
 TEST $CLI_1 snapshot create snap1 $V0 no-timestamp
+sleep 1
 TEST $CLI_1 snapshot create snap2 $V0 no-timestamp
 
 # a clone needs an activated snapshot; only the snapshots that get cloned
@@ -52,6 +58,7 @@ EXPECT 'Created' volinfo_field_1 ${V0}_clone1 'Status'
 
 # 3 snapshots, soft limit 2: the only over-limit snapshot is snap1, which
 # is clone-held, so nothing is reclaimed (the old code deleted snap1 here)
+sleep 1
 TEST $CLI_1 snapshot create snap3 $V0 no-timestamp
 TEST snapshot_exists 1 snap1
 EXPECT "3" get_snap_count CLI_1
@@ -59,6 +66,7 @@ EXPECT_WITHIN $PROBE_TIMEOUT "3" get_snap_count CLI_2
 
 # 4 snapshots: two over the limit; snap1 is skipped and snap2, the next
 # oldest, is removed
+sleep 1
 TEST $CLI_1 snapshot create snap4 $V0 no-timestamp
 TEST snapshot_exists 1 snap1
 TEST ! snapshot_exists 1 snap2
@@ -74,6 +82,7 @@ TEST ! snapshot_exists 2 snap2
 TEST $CLI_1 snapshot activate snap3
 TEST $CLI_1 snapshot clone ${V0}_clone3 snap3
 EXPECT 'Created' volinfo_field_1 ${V0}_clone3 'Status'
+sleep 1
 TEST $CLI_1 snapshot create snap5 $V0 no-timestamp
 TEST snapshot_exists 1 snap1
 TEST snapshot_exists 1 snap3
@@ -81,6 +90,7 @@ EXPECT "4" get_snap_count CLI_1
 EXPECT_WITHIN $PROBE_TIMEOUT "4" get_snap_count CLI_2
 
 # ... where creation is refused
+sleep 1
 TEST ! $CLI_1 snapshot create snap6 $V0 no-timestamp
 EXPECT "4" get_snap_count CLI_1
 
