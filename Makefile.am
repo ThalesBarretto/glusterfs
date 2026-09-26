@@ -6,18 +6,29 @@ EXTRA_DIST = autogen.sh \
 	glusterfs.spec glusterfs-api.pc.in libgfchangelog.pc.in \
 	run-tests.sh \
 	build-aux/pkg-version \
-	contrib/umountd \
 	$(shell find $(top_srcdir)/tests -type f -print)
 
 
+if BUILD_FUSERMOUNT
+  FUSERMOUNT_DIR = contrib/fuse-util
+endif
+
+if BUILD_SYNCDAEMON
+  SYNCDAEMON_DIR = geo-replication
+endif
+
+if BUILD_UMOUNTD
+  UMOUNTD_DIR = contrib/umountd
+endif
+
 SUBDIRS = $(ARGP_STANDALONE_DIR) libglusterfs rpc api \
-	glusterfsd xlators $(FUSERMOUNT_SUBDIR) doc extras cli heal \
-	@SYNCDAEMON_SUBDIR@ @UMOUNTD_SUBDIR@ tools events
+	glusterfsd xlators $(FUSERMOUNT_DIR) doc extras cli heal \
+	$(SYNCDAEMON_DIR) $(UMOUNTD_DIR) tools events
 
 pkgconfigdir = @pkgconfigdir@
 pkgconfig_DATA = glusterfs-api.pc libgfchangelog.pc
 
-CLEANFILES = glusterfs-api.pc libgfchangelog.pc contrib/umountd/Makefile
+CLEANFILES = glusterfs-api.pc libgfchangelog.pc
 
 clean-local:
 	find . -name '*.o' -o -name '*.lo' -o -name '.Po' | xargs rm -f
@@ -32,7 +43,6 @@ gitclean: distclean
 # dist-hook gets executed with 'make dist', this is the only target getting
 # executed, a dist-hook in other Makefile.am files seem to get ignored.
 dist-hook: gen-VERSION gen-ChangeLog
-	-rm -fr $(distdir)/contrib/umountd/.deps
 	-rm -f $(distdir)/events/src/eventtypes.py
 	-rm -f $(distdir)/tests/env.rc
 	-cp -f $(top_srcdir)/build-aux/config.sub.dist $(distdir)/config.sub

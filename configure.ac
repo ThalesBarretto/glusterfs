@@ -544,7 +544,6 @@ AC_ARG_WITH([ocf],
 if test "x$with_ocf" != "xno"; then
    OCF_SUBDIR='ocf'
 fi
-AC_SUBST(OCF_SUBDIR)
 
 AC_ARG_WITH([server],
             [AS_HELP_STRING([--without-server], [do not build server components])],
@@ -791,8 +790,6 @@ if test "x$enable_fuse_client" != "xno"; then
    BUILD_FUSE_CLIENT="yes"
 fi
 
-AC_SUBST(FUSE_CLIENT_SUBDIR)
-
 AC_ARG_ENABLE([fuse-notifications],
   AS_HELP_STRING([--disable-fuse-notifications], [Disable FUSE notifications]))
 
@@ -832,8 +829,6 @@ else
    AC_DEFINE(GF_FUSERMOUNT, 1, [Use our own fusermount])
    FUSERMOUNT_SUBDIR="contrib/fuse-util"
 fi
-
-AC_SUBST(FUSERMOUNT_SUBDIR)
 #end FUSERMOUNT section
 
 # EPOLL section
@@ -886,14 +881,12 @@ if test "x${with_server}" = "xyes" -a "x${enable_georeplication}" != "xno"; then
   fi
 fi
 AC_SUBST(SYNCDAEMON_COMPILE)
-AC_SUBST(SYNCDAEMON_SUBDIR)
 # end SYNCDAEMON section
 
 # only install scripts from extras/geo-rep when enabled
 if test "x${with_server}" = "xyes" -a "x$enable_georeplication" != "xno"; then
   GEOREP_EXTRAS_SUBDIR=geo-rep
 fi
-AC_SUBST(GEOREP_EXTRAS_SUBDIR)
 AM_CONDITIONAL(USE_GEOREP, test "x$enable_georeplication" != "xno")
 
 # METADISP section
@@ -1588,7 +1581,16 @@ UMOUNTD_SUBDIR=""
 if test "x${GF_HOST_OS}" != "xGF_LINUX_HOST_OS" ; then
         UMOUNTD_SUBDIR="contrib/umountd"
 fi
-AC_SUBST(UMOUNTD_SUBDIR)
+
+dnl Optional directories are automake conditionals, so that "make dist"
+dnl includes them whether or not this configuration builds them. Each
+dnl *_SUBDIR above is final here, after the per-OS overrides.
+AM_CONDITIONAL([BUILD_OCF], [test -n "$OCF_SUBDIR"])
+AM_CONDITIONAL([BUILD_FUSE_CLIENT], [test -n "$FUSE_CLIENT_SUBDIR"])
+AM_CONDITIONAL([BUILD_FUSERMOUNT], [test -n "$FUSERMOUNT_SUBDIR"])
+AM_CONDITIONAL([BUILD_SYNCDAEMON], [test -n "$SYNCDAEMON_SUBDIR"])
+AM_CONDITIONAL([BUILD_GEOREP_EXTRAS], [test -n "$GEOREP_EXTRAS_SUBDIR"])
+AM_CONDITIONAL([BUILD_UMOUNTD], [test -n "$UMOUNTD_SUBDIR"])
 
 
 # enable debug section

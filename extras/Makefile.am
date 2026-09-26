@@ -10,8 +10,16 @@ endif
 EditorModedir = $(docdir)
 EditorMode_DATA = glusterfs-mode.el glusterfs.vim
 
-SUBDIRS = init.d systemd benchmarking hook-scripts $(OCF_SUBDIR) LinuxRPM \
-          $(GEOREP_EXTRAS_SUBDIR) snap_scheduler firewalld cliutils python \
+if BUILD_OCF
+  OCF_DIR = ocf
+endif
+
+if BUILD_GEOREP_EXTRAS
+  GEOREP_EXTRAS_DIR = geo-rep
+endif
+
+SUBDIRS = init.d systemd benchmarking hook-scripts $(OCF_DIR) LinuxRPM \
+          $(GEOREP_EXTRAS_DIR) snap_scheduler firewalld cliutils python \
 		  ganesha command-completion
 
 confdir = $(sysconfdir)/glusterfs
