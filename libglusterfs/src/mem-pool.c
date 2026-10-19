@@ -17,6 +17,25 @@
 #include "unittest/unittest.h"
 #include "glusterfs/libglusterfs-messages.h"
 
+/* Make AddressSanitizer aware of the mem-pool's own suballocation. Without
+ * this, asan sees each pooled object's block as one live malloc() and cannot
+ * detect use-after-mem_put (the object is returned to a free-list, never
+ * free()d). We poison the user region on mem_put and unpoison it on mem_get,
+ * leaving the pooled_obj_hdr_t (which carries the free-list linkage) untouched.
+ * No-ops when not building with -fsanitize=address. */
+#if defined(__SANITIZE_ADDRESS__)
+#include <sanitizer/asan_interface.h>
+#define GF_POISON(p, n) ASAN_POISON_MEMORY_REGION((p), (n))
+#define GF_UNPOISON(p, n) ASAN_UNPOISON_MEMORY_REGION((p), (n))
+#else
+#define GF_POISON(p, n)                                                        \
+    do {                                                                       \
+    } while (0)
+#define GF_UNPOISON(p, n)                                                      \
+    do {                                                                       \
+    } while (0)
+#endif
+
 void
 gf_mem_acct_enable_set(void *data)
 {
@@ -477,6 +496,9 @@ free_obj_list(pooled_obj_hdr_t *victim)
 
     while (victim) {
         next = victim->next;
+        /* user region was poisoned on mem_put; unpoison before handing the
+         * whole block back to libc free(). */
+        GF_UNPOISON(victim, 1UL << victim->power_of_two);
         free(victim);
         victim = next;
     }
@@ -887,6 +909,9 @@ mem_get_malloc(struct mem_pool *mem_pool)
 
     GF_ATOMIC_INC(mem_pool->active);
 
+    /* Object is live again: let asan see reads/writes to it. */
+    GF_UNPOISON(retval + 1, AVAILABLE_SIZE(mem_pool->pool->power_of_two));
+
     return retval + 1;
 }
 
@@ -924,6 +949,11 @@ mem_put_pool(void *ptr)
 
     hdr->magic = GF_MEM_INVALID_MAGIC;
 
+    /* Object is going back to the free-list: poison the user region so that
+     * asan flags any use-after-mem_put. Only the user region is poisoned; the
+     * pooled_obj_hdr_t below stays accessible for the free-list linkage. */
+    GF_POISON((char *)ptr, AVAILABLE_SIZE(hdr->power_of_two));
+
     (void)pthread_spin_lock(&pool_list->lock);
     if (!pool_list->poison) {
         hdr->next = pt_pool->hot_list;
@@ -933,6 +963,7 @@ mem_put_pool(void *ptr)
         /* If the owner thread of this element has terminated, we simply
          * release its memory. */
         (void)pthread_spin_unlock(&pool_list->lock);
+        GF_UNPOISON(hdr, 1UL << hdr->power_of_two);
         free(hdr);
     }
 }
