@@ -383,6 +383,29 @@ if test "x$enable_ubsan" = "xyes"; then
         GF_LDFLAGS="${GF_LDFLAGS} -fsanitize=undefined"
 fi
 
+# --enable-valgrind prevents calling dlclose(), this leaks memory
+AC_ARG_ENABLE([valgrind],
+              AS_HELP_STRING([--enable-valgrind@<:@=memcheck,drd@:>@],[Enable valgrind for resource leak (memcheck, which is
+                              the default) or thread synchronization (drd) debugging.]))
+case x$enable_valgrind in
+  xmemcheck|xyes)
+    AC_DEFINE(RUN_WITH_MEMCHECK, 1,
+              [Define if all processes should run under 'valgrind --tool=memcheck'.])
+    VALGRIND_TOOL=memcheck
+    ;;
+  xdrd)
+    AC_DEFINE(RUN_WITH_DRD, 1,
+              [Define if all processes should run under 'valgrind --tool=drd'.])
+    VALGRIND_TOOL=drd
+    ;;
+  x|xno)
+    VALGRIND_TOOL=no
+    ;;
+  *)
+    AC_MSG_ERROR([Please specify --enable-valgrind@<:@=memcheck,drd@:>@])
+    ;;
+esac
+
 # Initialize CFLAGS before usage
 dnl Allocator: tcmalloc (the default), the gluster memory pool on top of libc
 dnl malloc (--without-tcmalloc or --enable-mempool), or plain libc malloc with
@@ -402,6 +425,29 @@ AC_ARG_ENABLE([mempool],
 AC_ARG_WITH([tcmalloc],
         [AS_HELP_STRING([--without-tcmalloc],[Use gluster based mempool])],
         [], [with_tcmalloc="auto"])
+dnl AddressSanitizer and valgrind memcheck observe malloc and free; tcmalloc
+dnl and the gluster memory pool both hide object boundaries and free-state
+dnl from them, a tcmalloc build does not finish under memcheck, and until the
+dnl sanitizer probes became link tests it did not even configure under
+dnl --enable-asan. Unless the allocator was chosen explicitly, such builds use
+dnl plain libc malloc. tsan, drd, ubsan and --enable-debug are left alone.
+gf_memory_instrumented=no
+if test "x$SANITIZER" = "xasan" || test "x$VALGRIND_TOOL" = "xmemcheck"; then
+    gf_memory_instrumented=yes
+fi
+if test "x$gf_memory_instrumented" = "xyes"; then
+    if test "x$with_tcmalloc" = "xyes"; then
+        AC_MSG_ERROR([--with-tcmalloc cannot be combined with --enable-asan or --enable-valgrind=memcheck: tcmalloc hides the heap from them; use --disable-mempool, or --without-tcmalloc to test the gluster memory pool])
+    fi
+    if test "x$with_tcmalloc" = "xauto" && test "x$enable_mempool" = "x"; then
+        with_tcmalloc="no"
+        enable_mempool="no"
+        AC_MSG_NOTICE([--enable-asan/--enable-valgrind=memcheck: using plain libc malloc (--disable-mempool); pass --without-tcmalloc or --enable-mempool to test the gluster memory pool instead])
+    fi
+    if test "x$enable_mempool" != "xno"; then
+        AC_MSG_WARN([the gluster memory pool is on: use-after-free and small overflows of pooled objects are invisible to AddressSanitizer and memcheck])
+    fi
+fi
 if test "x$enable_mempool" = "xno" && test "x$with_tcmalloc" = "xyes"; then
     AC_MSG_ERROR([--disable-mempool (plain libc malloc) contradicts --with-tcmalloc])
 fi
@@ -508,28 +554,6 @@ case $host_os in
     ;;
 esac
 
-# --enable-valgrind prevents calling dlclose(), this leaks memory
-AC_ARG_ENABLE([valgrind],
-              AS_HELP_STRING([--enable-valgrind@<:@=memcheck,drd@:>@],[Enable valgrind for resource leak (memcheck, which is
-                              the default) or thread synchronization (drd) debugging.]))
-case x$enable_valgrind in
-  xmemcheck|xyes)
-    AC_DEFINE(RUN_WITH_MEMCHECK, 1,
-              [Define if all processes should run under 'valgrind --tool=memcheck'.])
-    VALGRIND_TOOL=memcheck
-    ;;
-  xdrd)
-    AC_DEFINE(RUN_WITH_DRD, 1,
-              [Define if all processes should run under 'valgrind --tool=drd'.])
-    VALGRIND_TOOL=drd
-    ;;
-  x|xno)
-    VALGRIND_TOOL=no
-    ;;
-  *)
-    AC_MSG_ERROR([Please specify --enable-valgrind@<:@=memcheck,drd@:>@])
-    ;;
-esac
 
 if test "x$VALGRIND_TOOL" != xno; then
    AC_MSG_CHECKING([whether valgrind API can be used])
