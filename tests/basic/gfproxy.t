@@ -21,9 +21,9 @@ TEST $CLI volume start $V0
 
 sleep 2
 
-REGULAR_CLIENT_VOLFILE="/var/lib/glusterd/vols/${V0}/trusted-${V0}.tcp-fuse.vol"
-GFPROXY_CLIENT_VOLFILE="/var/lib/glusterd/vols/${V0}/trusted-${V0}.tcp-gfproxy-fuse.vol"
-GFPROXYD_VOLFILE="/var/lib/glusterd/vols/${V0}/${V0}.gfproxyd.vol"
+REGULAR_CLIENT_VOLFILE="$GLUSTERD_WORKDIR/vols/${V0}/trusted-${V0}.tcp-fuse.vol"
+GFPROXY_CLIENT_VOLFILE="$GLUSTERD_WORKDIR/vols/${V0}/trusted-${V0}.tcp-gfproxy-fuse.vol"
+GFPROXYD_VOLFILE="$GLUSTERD_WORKDIR/vols/${V0}/${V0}.gfproxyd.vol"
 
 # Client volfile must exist
 TEST [ -f $GFPROXY_CLIENT_VOLFILE ]
@@ -45,7 +45,7 @@ TEST grep "cluster/distribute" $GFPROXYD_VOLFILE
 TEST ! grep "performance/write-behind" $GFPROXYD_VOLFILE
 
 # Test that we can start the server and the client
-TEST glusterfs --thin-client --volfile-id=patchy --volfile-server=$H0 -l /var/log/glusterfs/${V0}-gfproxy-client.log $M0
+TEST glusterfs --thin-client --volfile-id=patchy --volfile-server=$H0 -l $LOGDIR/${V0}-gfproxy-client.log $M0
 sleep 2
 TEST grep gfproxy-client/${V0} /proc/mounts
 
