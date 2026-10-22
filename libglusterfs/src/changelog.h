@@ -11,6 +11,10 @@
 #ifndef _GF_CHANGELOG_H
 #define _GF_CHANGELOG_H
 
+#include <limits.h>    /* PATH_MAX */
+#include <stdint.h>    /* int32_t, uint64_t */
+#include <sys/types.h> /* ssize_t */
+
 struct gf_brick_spec;
 
 /**
