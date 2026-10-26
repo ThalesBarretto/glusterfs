@@ -6069,6 +6069,12 @@ fuse_dispatch(gf_async_t *async)
  * found to be reduces 'REALLOC()' in the loop */
 #define FUSE_EXTRA_ALLOC 512
 
+/* fuse_async_t is stored in the request's buffer, right after the request.
+ * A request can have any length, so the structure's address is rounded up
+ * to its alignment, and the buffer reserves room for that. */
+#define FUSE_ASYNC_ALIGN __alignof__(fuse_async_t)
+#define FUSE_ASYNC_SIZE (sizeof(fuse_async_t) + FUSE_ASYNC_ALIGN - 1)
+
 static void *
 fuse_thread_proc(void *data)
 {
@@ -6162,7 +6168,7 @@ fuse_thread_proc(void *data)
          * but it's good enough in most cases (and we can handle
          * rest via realloc). */
         iov_in[0].iov_base = GF_MALLOC(
-            sizeof(fuse_async_t) + msg0_size + FUSE_EXTRA_ALLOC,
+            FUSE_ASYNC_SIZE + msg0_size + FUSE_EXTRA_ALLOC,
             gf_fuse_mt_iov_base);
 
         if (!iobuf || !iov_in[0].iov_base) {
@@ -6258,8 +6264,7 @@ fuse_thread_proc(void *data)
             msg = iov_in[1].iov_base;
         else {
             if (res > msg0_size + FUSE_EXTRA_ALLOC) {
-                void *b = GF_REALLOC(iov_in[0].iov_base,
-                                     sizeof(fuse_async_t) + res);
+                void *b = GF_REALLOC(iov_in[0].iov_base, FUSE_ASYNC_SIZE + res);
                 if (b) {
                     iov_in[0].iov_base = b;
                     finh = (fuse_in_header_t *)iov_in[0].iov_base;
@@ -6287,7 +6292,8 @@ fuse_thread_proc(void *data)
             fuse_enosys(this, finh, msg, NULL);
             iobuf_unref(iobuf);
         } else {
-            fasync = iov_in[0].iov_base + iov_in[0].iov_len;
+            fasync = GF_ALIGN_BUF(iov_in[0].iov_base + iov_in[0].iov_len,
+                                  FUSE_ASYNC_ALIGN);
             fasync->finh = finh;
             fasync->msg = msg;
             fasync->iobuf = iobuf;
