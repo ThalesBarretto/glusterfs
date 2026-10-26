@@ -4956,10 +4956,10 @@ shard_readv_do_cbk(call_frame_t *frame, void *cookie, xlator_t *this,
     }
 
     for (i = 0; i < count; i++) {
-        address = (char *)address + off;
         /* a reply of zero bytes is one empty vector with no base */
         if (vector[i].iov_len)
-            memcpy(address, vector[i].iov_base, vector[i].iov_len);
+            memcpy((char *)address + off, vector[i].iov_base,
+                   vector[i].iov_len);
         off += vector[i].iov_len;
     }
 
