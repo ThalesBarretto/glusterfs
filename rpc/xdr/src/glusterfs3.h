@@ -869,9 +869,11 @@ xdr_to_dict(gfx_dict *dict, dict_t **to)
                     errno = ENOMEM;
                     goto out;
                 }
-                memcpy(value,
-                       xpair->value.gfx_value_u.val_string.val_string_val,
-                       xpair->value.gfx_value_u.val_string.val_string_len);
+                /* An empty opaque decodes to a NULL pointer. */
+                if (xpair->value.gfx_value_u.val_string.val_string_len)
+                    memcpy(value,
+                           xpair->value.gfx_value_u.val_string.val_string_val,
+                           xpair->value.gfx_value_u.val_string.val_string_len);
                 value[xpair->value.gfx_value_u.val_string.val_string_len] =
                     '\0';
                 free(xpair->value.gfx_value_u.val_string.val_string_val);
@@ -927,8 +929,9 @@ xdr_to_dict(gfx_dict *dict, dict_t **to)
                     errno = ENOMEM;
                     goto out;
                 }
-                memcpy(value, xpair->value.gfx_value_u.other.other_val,
-                       xpair->value.gfx_value_u.other.other_len);
+                if (xpair->value.gfx_value_u.other.other_len)
+                    memcpy(value, xpair->value.gfx_value_u.other.other_val,
+                           xpair->value.gfx_value_u.other.other_len);
                 value[xpair->value.gfx_value_u.other.other_len] = '\0';
                 free(xpair->value.gfx_value_u.other.other_val);
                 ret = dict_set_dynptr(this, key, value,
