@@ -84,6 +84,18 @@ out:
     return;
 }
 
+/* The fields of a newfile blob follow a basename of any length, and the blob
+ * itself is a setxattr value with no alignment guarantee: read each 32-bit
+ * field with memcpy(). */
+static uint32_t
+ga_blob_get_be32(const void *blob)
+{
+    uint32_t v;
+
+    memcpy(&v, blob, sizeof(v));
+    return be32toh(v);
+}
+
 ga_newfile_args_t *
 ga_newfile_parse_args(xlator_t *this, data_t *data)
 {
@@ -112,11 +124,11 @@ ga_newfile_parse_args(xlator_t *this, data_t *data)
     if (args == NULL)
         goto err;
 
-    args->uid = be32toh(*(uint32_t *)blob);
+    args->uid = ga_blob_get_be32(blob);
     blob += sizeof(uint32_t);
     blob_len -= sizeof(uint32_t);
 
-    args->gid = be32toh(*(uint32_t *)blob);
+    args->gid = ga_blob_get_be32(blob);
     blob += sizeof(uint32_t);
     blob_len -= sizeof(uint32_t);
 
@@ -124,7 +136,7 @@ ga_newfile_parse_args(xlator_t *this, data_t *data)
     blob += sizeof(args->gfid);
     blob_len -= sizeof(args->gfid);
 
-    args->st_mode = be32toh(*(uint32_t *)blob);
+    args->st_mode = ga_blob_get_be32(blob);
     blob += sizeof(uint32_t);
     blob_len -= sizeof(uint32_t);
 
@@ -149,7 +161,7 @@ ga_newfile_parse_args(xlator_t *this, data_t *data)
                    args->gfid);
             goto err;
         }
-        args->args.mkdir.mode = be32toh(*(uint32_t *)blob);
+        args->args.mkdir.mode = ga_blob_get_be32(blob);
         blob += sizeof(uint32_t);
         blob_len -= sizeof(uint32_t);
 
@@ -158,7 +170,7 @@ ga_newfile_parse_args(xlator_t *this, data_t *data)
                    args->gfid);
             goto err;
         }
-        args->args.mkdir.umask = be32toh(*(uint32_t *)blob);
+        args->args.mkdir.umask = ga_blob_get_be32(blob);
         blob_len -= sizeof(uint32_t);
         if (blob_len < 0) {
             gf_log(this->name, GF_LOG_ERROR, "gfid: %s. Invalid length",
@@ -184,7 +196,7 @@ ga_newfile_parse_args(xlator_t *this, data_t *data)
                    args->gfid);
             goto err;
         }
-        args->args.mknod.mode = be32toh(*(uint32_t *)blob);
+        args->args.mknod.mode = ga_blob_get_be32(blob);
         blob += sizeof(uint32_t);
         blob_len -= sizeof(uint32_t);
 
@@ -193,7 +205,7 @@ ga_newfile_parse_args(xlator_t *this, data_t *data)
                    args->gfid);
             goto err;
         }
-        args->args.mknod.rdev = be32toh(*(uint32_t *)blob);
+        args->args.mknod.rdev = ga_blob_get_be32(blob);
         blob += sizeof(uint32_t);
         blob_len -= sizeof(uint32_t);
 
@@ -202,7 +214,7 @@ ga_newfile_parse_args(xlator_t *this, data_t *data)
                    args->gfid);
             goto err;
         }
-        args->args.mknod.umask = be32toh(*(uint32_t *)blob);
+        args->args.mknod.umask = ga_blob_get_be32(blob);
         blob_len -= sizeof(uint32_t);
     }
 
