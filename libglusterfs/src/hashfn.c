@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef __FreeBSD__
 #include <sys/endian.h>
@@ -17,7 +18,27 @@
 #include <endian.h>
 #endif
 
-#define get16bits(d) le16toh(*((const uint16_t *)(d)))
+/* The hashed buffers have no alignment guarantee (a name is often a pointer
+ * into the middle of a path), so the words are read with memcpy(): a load
+ * through a uint16_t or uint32_t pointer is undefined for a misaligned
+ * address and traps on strict-alignment CPUs. */
+static inline uint16_t
+get16bits(const char *d)
+{
+    uint16_t v;
+
+    memcpy(&v, d, sizeof(v));
+    return le16toh(v);
+}
+
+static inline uint32_t
+get32bits(const char *d)
+{
+    uint32_t v;
+
+    memcpy(&v, d, sizeof(v));
+    return le32toh(v);
+}
 
 #define DM_DELTA 0x9E3779B9
 #define DM_FULLROUNDS 10 /* 32 is overkill, 16 is strong crypto */
@@ -131,10 +152,10 @@ gf_dm_hashfn(const char *msg, int len)
     int full_quads = 0;
     int full_words = 0;
     int full_bytes = 0;
-    uint32_t *intmsg = NULL;
+    const char *intmsg = NULL;
     uint32_t word = 0;
 
-    intmsg = (uint32_t *)msg;
+    intmsg = msg;
     pad = __pad(len);
 
     full_bytes = len;
@@ -143,9 +164,9 @@ gf_dm_hashfn(const char *msg, int len)
 
     for (i = 0; i < full_quads; i++) {
         for (j = 0; j < 4; j++) {
-            word = le32toh(*intmsg);
+            word = get32bits(intmsg);
             array[j] = word;
-            intmsg++;
+            intmsg += sizeof(uint32_t);
             full_words--;
             full_bytes -= 4;
         }
@@ -154,9 +175,9 @@ gf_dm_hashfn(const char *msg, int len)
 
     for (j = 0; j < 4; j++) {
         if (full_words) {
-            word = le32toh(*intmsg);
+            word = get32bits(intmsg);
             array[j] = word;
-            intmsg++;
+            intmsg += sizeof(uint32_t);
             full_words--;
             full_bytes -= 4;
         } else {
