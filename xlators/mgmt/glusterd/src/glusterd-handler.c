@@ -1916,8 +1916,6 @@ out:
     }
     if (op_errstr)
         GF_FREE(op_errstr);
-    if (dict)
-        dict_unref(dict);
 
     return ret;
 }
