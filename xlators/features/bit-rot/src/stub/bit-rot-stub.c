@@ -1071,6 +1071,7 @@ br_stub_handle_object_signature(call_frame_t *frame, xlator_t *this, fd_t *fd,
     int fakesuccess = 0;
     br_stub_private_t *priv = NULL;
     struct br_stub_signentry *sigstub = NULL;
+    unsigned long signedversion = 0;
 
     priv = this->private;
 
@@ -1091,6 +1092,9 @@ br_stub_handle_object_signature(call_frame_t *frame, xlator_t *this, fd_t *fd,
         goto dofop;
     }
 
+    /* sign points into the value of GLUSTERFS_SET_OBJECT_SIGNATURE, which
+     * dict_del() frees: take what is needed from it first */
+    signedversion = ntohl(sign->signedversion);
     dict_del(dict, GLUSTERFS_SET_OBJECT_SIGNATURE);
 
     ret = -1;
@@ -1112,7 +1116,7 @@ br_stub_handle_object_signature(call_frame_t *frame, xlator_t *this, fd_t *fd,
         goto unref_dict;
 
     INIT_LIST_HEAD(&sigstub->list);
-    sigstub->v = ntohl(sign->signedversion);
+    sigstub->v = signedversion;
     sigstub->stub = fop_fsetxattr_stub(frame, br_stub_perform_objsign, fd, dict,
                                        0, xdata);
     if (!sigstub->stub)
