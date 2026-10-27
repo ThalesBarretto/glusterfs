@@ -321,6 +321,11 @@ br_stub_worker(void *data)
     priv = this->private;
 
     for (;;) {
+        /* Disabling bit-rot cancels this thread (gf_thread_cleanup_xint),
+         * normally while it waits on bad_cond, and a thread cancelled in
+         * pthread_cond_wait() holds the mutex again: release it on
+         * cancellation, as br_stub_signth() does for priv->lock. */
+        pthread_cleanup_push(br_stub_lock_cleaner, &priv->container.bad_lock);
         pthread_mutex_lock(&priv->container.bad_lock);
         {
             while (list_empty(&priv->container.bad_queue)) {
@@ -331,6 +336,7 @@ br_stub_worker(void *data)
             stub = __br_stub_dequeue(&priv->container.bad_queue);
         }
         pthread_mutex_unlock(&priv->container.bad_lock);
+        pthread_cleanup_pop(0);
 
         if (stub) /* guard against spurious wakeups */
             call_resume(stub);

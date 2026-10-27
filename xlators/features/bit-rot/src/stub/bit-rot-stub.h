@@ -483,6 +483,9 @@ br_stub_worker_enqueue(xlator_t *this, call_stub_t *stub);
 void *
 br_stub_worker(void *data);
 
+void
+br_stub_lock_cleaner(void *arg);
+
 int32_t
 br_stub_lookup_wrapper(call_frame_t *frame, xlator_t *this, loc_t *loc,
                        dict_t *xattr_req);
