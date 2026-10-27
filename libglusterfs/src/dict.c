@@ -27,12 +27,15 @@ struct dict_cmp {
     gf_boolean_t (*value_ignore)(char *k);
 };
 
-#define VALIDATE_DATA_AND_LOG(data, type, key, ret_val)                        \
+/* Checks that data holds a value and logs a type mismatch. When data is NULL
+ * or holds no value (data->data == NULL, e.g. a dynptr set with a NULL
+ * pointer), it logs and runs on_invalid, which must leave the function. */
+#define VALIDATE_DATA_DO(data, type, key, on_invalid)                          \
     do {                                                                       \
         if (!data || !data->data) {                                            \
             gf_msg_callingfn("dict", GF_LOG_DEBUG, EINVAL, LG_MSG_INVALID_ARG, \
                              "data is NULL");                                  \
-            return ret_val;                                                    \
+            on_invalid;                                                        \
         }                                                                      \
         /* Not of the asked type, or old version */                            \
         if ((data->data_type != type) &&                                       \
@@ -43,6 +46,16 @@ struct dict_cmp {
                              data_type_name[data->data_type]);                 \
         }                                                                      \
     } while (0)
+
+/* For data_to_*(), which hold no reference on data: return directly. */
+#define VALIDATE_DATA_AND_LOG(data, type, key, ret_val)                        \
+    VALIDATE_DATA_DO(data, type, key, return ret_val)
+
+/* For dict_get_*(), whose data carries the reference dict_get_with_ref()
+ * took: set ret and leave through label, which must drop that reference.
+ * Returning directly from such a getter leaks one reference on data. */
+#define VALIDATE_DATA_AND_LOG_GOTO(data, type, key, ret, ret_val, label)       \
+    VALIDATE_DATA_DO(data, type, key, ret = (ret_val); goto label)
 
 static data_t *
 get_new_data(void)
@@ -1541,7 +1554,7 @@ dict_get_int8(dict_t *this, char *key, int8_t *val)
         goto err;
     }
 
-    VALIDATE_DATA_AND_LOG(data, GF_DATA_TYPE_INT, key, -EINVAL);
+    VALIDATE_DATA_AND_LOG_GOTO(data, GF_DATA_TYPE_INT, key, ret, -EINVAL, err);
 
     ret = data_to_int8_ptr(data, val);
 
@@ -1587,7 +1600,7 @@ dict_get_int16(dict_t *this, char *key, int16_t *val)
         goto err;
     }
 
-    VALIDATE_DATA_AND_LOG(data, GF_DATA_TYPE_INT, key, -EINVAL);
+    VALIDATE_DATA_AND_LOG_GOTO(data, GF_DATA_TYPE_INT, key, ret, -EINVAL, err);
 
     ret = data_to_int16_ptr(data, val);
 
@@ -1633,7 +1646,7 @@ dict_get_int32n(dict_t *this, char *key, const int keylen, int32_t *val)
         goto err;
     }
 
-    VALIDATE_DATA_AND_LOG(data, GF_DATA_TYPE_INT, key, -EINVAL);
+    VALIDATE_DATA_AND_LOG_GOTO(data, GF_DATA_TYPE_INT, key, ret, -EINVAL, err);
 
     ret = data_to_int32_ptr(data, val);
 
@@ -1659,7 +1672,7 @@ dict_get_int32(dict_t *this, char *key, int32_t *val)
         goto err;
     }
 
-    VALIDATE_DATA_AND_LOG(data, GF_DATA_TYPE_INT, key, -EINVAL);
+    VALIDATE_DATA_AND_LOG_GOTO(data, GF_DATA_TYPE_INT, key, ret, -EINVAL, err);
 
     ret = data_to_int32_ptr(data, val);
 
@@ -1724,7 +1737,7 @@ dict_get_int64(dict_t *this, char *key, int64_t *val)
         goto err;
     }
 
-    VALIDATE_DATA_AND_LOG(data, GF_DATA_TYPE_INT, key, -EINVAL);
+    VALIDATE_DATA_AND_LOG_GOTO(data, GF_DATA_TYPE_INT, key, ret, -EINVAL, err);
 
     ret = data_to_int64_ptr(data, val);
 
@@ -1769,7 +1782,7 @@ dict_get_int64n(dict_t *this, char *key, const int keylen, int64_t *val)
         goto err;
     }
 
-    VALIDATE_DATA_AND_LOG(data, GF_DATA_TYPE_INT, key, -EINVAL);
+    VALIDATE_DATA_AND_LOG_GOTO(data, GF_DATA_TYPE_INT, key, ret, -EINVAL, err);
 
     ret = data_to_int64_ptr(data, val);
 
@@ -1814,7 +1827,7 @@ dict_get_uint16(dict_t *this, char *key, uint16_t *val)
         goto err;
     }
 
-    VALIDATE_DATA_AND_LOG(data, GF_DATA_TYPE_UINT, key, -EINVAL);
+    VALIDATE_DATA_AND_LOG_GOTO(data, GF_DATA_TYPE_UINT, key, ret, -EINVAL, err);
 
     ret = data_to_uint16_ptr(data, val);
 
@@ -1859,7 +1872,7 @@ dict_get_uint32(dict_t *this, char *key, uint32_t *val)
         goto err;
     }
 
-    VALIDATE_DATA_AND_LOG(data, GF_DATA_TYPE_UINT, key, -EINVAL);
+    VALIDATE_DATA_AND_LOG_GOTO(data, GF_DATA_TYPE_UINT, key, ret, -EINVAL, err);
 
     ret = data_to_uint32_ptr(data, val);
 
@@ -1904,7 +1917,7 @@ dict_get_uint64(dict_t *this, char *key, uint64_t *val)
         goto err;
     }
 
-    VALIDATE_DATA_AND_LOG(data, GF_DATA_TYPE_UINT, key, -EINVAL);
+    VALIDATE_DATA_AND_LOG_GOTO(data, GF_DATA_TYPE_UINT, key, ret, -EINVAL, err);
 
     ret = data_to_uint64_ptr(data, val);
 
@@ -2102,7 +2115,8 @@ dict_get_double(dict_t *this, char *key, double *val)
         goto err;
     }
 
-    VALIDATE_DATA_AND_LOG(data, GF_DATA_TYPE_DOUBLE, key, -EINVAL);
+    VALIDATE_DATA_AND_LOG_GOTO(data, GF_DATA_TYPE_DOUBLE, key, ret, -EINVAL,
+                               err);
 
     ret = data_to_double_ptr(data, val);
 
@@ -2185,7 +2199,7 @@ dict_get_ptr(dict_t *this, char *key, void **ptr)
         goto err;
     }
 
-    VALIDATE_DATA_AND_LOG(data, GF_DATA_TYPE_PTR, key, -EINVAL);
+    VALIDATE_DATA_AND_LOG_GOTO(data, GF_DATA_TYPE_PTR, key, ret, -EINVAL, err);
 
     ret = data_to_ptr_common(data, ptr);
     if (ret != 0) {
@@ -2215,7 +2229,7 @@ dict_get_ptr_and_len(dict_t *this, char *key, void **ptr, int *len)
         goto err;
     }
 
-    VALIDATE_DATA_AND_LOG(data, GF_DATA_TYPE_PTR, key, -EINVAL);
+    VALIDATE_DATA_AND_LOG_GOTO(data, GF_DATA_TYPE_PTR, key, ret, -EINVAL, err);
 
     *len = data->len;
 
@@ -2246,7 +2260,7 @@ dict_get_strn(dict_t *this, char *key, const int keylen, char **str)
         goto err;
     }
 
-    VALIDATE_DATA_AND_LOG(data, GF_DATA_TYPE_STR, key, -EINVAL);
+    VALIDATE_DATA_AND_LOG_GOTO(data, GF_DATA_TYPE_STR, key, ret, -EINVAL, err);
 
     *str = data->data;
 
@@ -2271,7 +2285,7 @@ dict_get_str(dict_t *this, char *key, char **str)
         goto err;
     }
 
-    VALIDATE_DATA_AND_LOG(data, GF_DATA_TYPE_STR, key, -EINVAL);
+    VALIDATE_DATA_AND_LOG_GOTO(data, GF_DATA_TYPE_STR, key, ret, -EINVAL, err);
 
     *str = data->data;
 
@@ -2446,7 +2460,7 @@ dict_get_bin(dict_t *this, char *key, void **bin)
         goto err;
     }
 
-    VALIDATE_DATA_AND_LOG(data, GF_DATA_TYPE_PTR, key, ret);
+    VALIDATE_DATA_AND_LOG_GOTO(data, GF_DATA_TYPE_PTR, key, ret, ret, err);
 
     *bin = data->data;
 
@@ -2550,7 +2564,8 @@ dict_get_gfuuid(dict_t *this, char *key, uuid_t *gfid)
         goto err;
     }
 
-    VALIDATE_DATA_AND_LOG(data, GF_DATA_TYPE_GFUUID, key, -EINVAL);
+    VALIDATE_DATA_AND_LOG_GOTO(data, GF_DATA_TYPE_GFUUID, key, ret, -EINVAL,
+                               err);
 
     memcpy(*gfid, data->data, min(data->len, sizeof(uuid_t)));
 
@@ -2584,7 +2599,8 @@ dict_get_mdata(dict_t *this, char *key, struct mdata_iatt *mdata)
         goto err;
     }
 
-    VALIDATE_DATA_AND_LOG(data, GF_DATA_TYPE_MDATA, key, -EINVAL);
+    VALIDATE_DATA_AND_LOG_GOTO(data, GF_DATA_TYPE_MDATA, key, ret, -EINVAL,
+                               err);
     if (data->len < sizeof(struct mdata_iatt)) {
         gf_smsg("glusterfs", GF_LOG_ERROR, ENOBUFS, LG_MSG_UNDERSIZED_BUF,
                 "key=%s", key, NULL);
@@ -2623,7 +2639,7 @@ dict_get_iatt(dict_t *this, char *key, struct iatt *iatt)
         goto err;
     }
 
-    VALIDATE_DATA_AND_LOG(data, GF_DATA_TYPE_IATT, key, -EINVAL);
+    VALIDATE_DATA_AND_LOG_GOTO(data, GF_DATA_TYPE_IATT, key, ret, -EINVAL, err);
 
     memcpy(iatt, data->data, min(data->len, sizeof(struct iatt)));
 
@@ -2673,7 +2689,7 @@ dict_get_str_boolean(dict_t *this, char *key, int default_val)
         goto err;
     }
 
-    VALIDATE_DATA_AND_LOG(data, GF_DATA_TYPE_INT, key, -EINVAL);
+    VALIDATE_DATA_AND_LOG_GOTO(data, GF_DATA_TYPE_INT, key, ret, -EINVAL, err);
 
     ret = gf_strn2boolean(data->data, data->len - 1, &boo);
     if (ret == -1)
