@@ -662,15 +662,16 @@ gd_mgmt_v3_unlock_timer_cbk(void *data)
 out:
     if (mgmt_lock_timer) {
         GF_ASSERT(mgmt_lock_timer->xl && mgmt_lock_timer->xl->ctx);
+        /* key is the timer's data: log it before freeing it */
+        gf_log(this->name, GF_LOG_INFO,
+               "unlock timer is cancelled for volume_type"
+               " %s",
+               key);
         GF_FREE(mgmt_lock_timer->data);
         gf_timer_call_cancel(mgmt_lock_timer->xl->ctx, mgmt_lock_timer);
 #ifdef DEBUG
         dict_deln(conf->mgmt_v3_lock_timer, bt_key, bt_key_len);
 #endif
-        gf_log(this->name, GF_LOG_INFO,
-               "unlock timer is cancelled for volume_type"
-               " %s",
-               key);
     }
 }
 
