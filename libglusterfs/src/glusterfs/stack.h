@@ -318,7 +318,6 @@ get_the_pt_fop(void *base_fop, int fop_idx)
             list_add(&_new->frames, &frame->root->myframes);                   \
         }                                                                      \
         UNLOCK(&frame->root->stack_lock);                                      \
-        fn##_cbk = rfn;                                                        \
         old_THIS = THIS;                                                       \
         THIS = obj;                                                            \
         gf_msg_trace("stack-trace", 0,                                         \
