@@ -2519,6 +2519,7 @@ glusterd_snapshot_umount(glusterd_volinfo_t *snap_vol,
         ret = 0;
     }
 
+    GF_FREE(mnt_pt);
     return ret;
 }
 
