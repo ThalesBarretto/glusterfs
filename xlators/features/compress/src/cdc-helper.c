@@ -115,6 +115,8 @@ cdc_alloc_iobuf_and_init_vec(xlator_t *this, cdc_info_t *ci, int size)
         goto out;
 
     ret = iobref_add(ci->iobref, iobuf);
+    iobuf_unref(iobuf); /* ci->iobref holds the only reference now; on
+                         * failure this frees the buffer */
     if (caa_unlikely(ret))
         goto out;
 

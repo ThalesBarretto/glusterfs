@@ -15,13 +15,6 @@
 #include "cdc.h"
 #include "cdc-mem-types.h"
 
-static void
-cdc_cleanup_iobref(cdc_info_t *ci)
-{
-    assert(ci->iobref != NULL);
-    iobref_clear(ci->iobref);
-}
-
 static int32_t
 cdc_readv_cbk(call_frame_t *frame, void *cookie, xlator_t *this, int32_t op_ret,
               int32_t op_errno, struct iovec *vector, int32_t count,
@@ -67,12 +60,19 @@ cdc_readv_cbk(call_frame_t *frame, void *cookie, xlator_t *this, int32_t op_ret,
     if (ret)
         goto default_out;
 
+    /* Same ownership rule as in cdc_writev(): the unwound vector lives in
+     * ci.iobref, so that is the iobref the reply path must reference. */
+    if (iobref)
+        iobref_merge(ci.iobref, iobref);
+
     STACK_UNWIND_STRICT(readv, frame, ci.nbytes, op_errno, ci.vec, ci.ncount,
-                        stbuf, iobref, xdata);
-    cdc_cleanup_iobref(&ci);
+                        stbuf, ci.iobref, xdata);
+    iobref_unref(ci.iobref);
     return 0;
 
 default_out:
+    if (ci.iobref)
+        iobref_unref(ci.iobref);
     STACK_UNWIND_STRICT(readv, frame, op_ret, op_errno, vector, count, stbuf,
                         iobref, xdata);
     return 0;
@@ -146,14 +146,25 @@ cdc_writev(call_frame_t *frame, xlator_t *this, fd_t *fd, struct iovec *vector,
     if (ret)
         goto default_out;
 
+    /* ci.vec points into the iobufs held by ci.iobref. Whoever we wind to
+     * keeps the vector alive by taking a reference on the iobref it is
+     * given (io-threads through its stub, the transport through its ioq),
+     * so that iobref must be the one holding these buffers. Merge the
+     * caller's iobref into it, hand it down, and drop only our own
+     * reference afterwards. */
+    if (iobref)
+        iobref_merge(ci.iobref, iobref);
+
     STACK_WIND(frame, cdc_writev_cbk, FIRST_CHILD(this),
                FIRST_CHILD(this)->fops->writev, fd, ci.vec, ci.ncount, offset,
-               flags, iobref, xdata);
+               flags, ci.iobref, xdata);
 
-    cdc_cleanup_iobref(&ci);
+    iobref_unref(ci.iobref);
     return 0;
 
 default_out:
+    if (ci.iobref)
+        iobref_unref(ci.iobref);
     STACK_WIND(frame, cdc_writev_cbk, FIRST_CHILD(this),
                FIRST_CHILD(this)->fops->writev, fd, vector, count, offset,
                flags, iobref, xdata);
