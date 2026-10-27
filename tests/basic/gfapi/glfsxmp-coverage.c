@@ -1712,7 +1712,8 @@ test_metadata_ops(glfs_t *fs, glfs_t *fs2)
 
     ret = glfs_read(fd2, readbuf, 32, 0);
 
-    printf("read %d, %s", ret, readbuf);
+    /* readbuf holds only what the read returned, not a C string */
+    printf("read %d, %.*s", ret, ret > 0 ? ret : 0, readbuf);
 
     /* get stat */
     ret = glfs_fstat(fd2, &sb);
