@@ -851,6 +851,30 @@ out:
     return;
 }
 
+/* Drop the negative entry of a name that now exists, if one is cached */
+void
+nlc_dir_remove_ne(xlator_t *this, inode_t *parent, const char *name)
+{
+    nlc_ctx_t *nlc_ctx = NULL;
+    size_t name_len0;
+
+    if (!parent || !name)
+        goto out;
+
+    nlc_ctx = nlc_inode_ctx_get(this, parent);
+    if (!nlc_ctx)
+        goto out;
+
+    name_len0 = strlen(name) + 1; /* account for '\0' */
+    LOCK(&nlc_ctx->lock);
+    {
+        __nlc_del_ne(this->private, nlc_ctx, name, name_len0);
+    }
+    UNLOCK(&nlc_ctx->lock);
+out:
+    return;
+}
+
 void
 nlc_dir_remove_pe(xlator_t *this, inode_t *parent, inode_t *entry_ino,
                   const char *name, gf_boolean_t multilink)

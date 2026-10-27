@@ -12,12 +12,43 @@
 #include <glusterfs/statedump.h>
 #include <glusterfs/upcall-utils.h>
 
+/* The fops that give a directory a new name */
+static gf_boolean_t
+nlc_fop_creates_name(glusterfs_fop_t fop)
+{
+    switch (fop) {
+        case GF_FOP_CREATE:
+        case GF_FOP_MKNOD:
+        case GF_FOP_MKDIR:
+        case GF_FOP_SYMLINK:
+        case GF_FOP_LINK:
+        case GF_FOP_RENAME:
+            return _gf_true;
+        default:
+            return _gf_false;
+    }
+}
+
 static void
 nlc_dentry_op(call_frame_t *frame, xlator_t *this, gf_boolean_t multilink, ia_type_t ia_type)
 {
     nlc_local_t *local = frame->local;
+    nlc_conf_t *conf = this->private;
 
     GF_VALIDATE_OR_GOTO(this->name, local, out);
+
+    if (!IS_PEC_ENABLED(conf)) {
+        /* No positive entries to update, but the name this fop created
+         * must not stay cached as missing: the brick's cache invalidation
+         * of the change reaches every client except this one. The new name
+         * is in loc2 for link and in loc otherwise (nlc_rename() passes
+         * newloc as loc). */
+        if (local->fop == GF_FOP_LINK)
+            nlc_dir_remove_ne(this, local->loc2.parent, local->loc2.name);
+        else if (nlc_fop_creates_name(local->fop))
+            nlc_dir_remove_ne(this, local->loc.parent, local->loc.name);
+        goto out;
+    }
 
     switch (local->fop) {
         case GF_FOP_MKDIR:
@@ -65,7 +96,7 @@ out:
                                                                                \
         conf = this->private;                                                  \
                                                                                \
-        if (!IS_PEC_ENABLED(conf))                                             \
+        if (!IS_PEC_ENABLED(conf) && !nlc_fop_creates_name(_op))               \
             goto disabled;                                                     \
                                                                                \
         __local = nlc_local_init(frame, _op, loc1, loc2);                      \
@@ -85,15 +116,9 @@ out:
 #define NLC_FOP_CBK(_name, multilink, frame, cookie, this, op_ret, op_errno,   \
                     ia_type, args...)                                          \
     do {                                                                       \
-        nlc_conf_t *conf = NULL;                                               \
-                                                                               \
         if (op_ret != 0)                                                       \
             goto out;                                                          \
                                                                                \
-        conf = this->private;                                                  \
-                                                                               \
-        if (!IS_PEC_ENABLED(conf))                                             \
-            goto out;                                                          \
         nlc_dentry_op(frame, this, multilink, ia_type);                        \
     out:                                                                       \
         NLC_STACK_UNWIND(_name, frame, op_ret, op_errno, args);                \

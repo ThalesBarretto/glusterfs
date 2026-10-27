@@ -139,6 +139,9 @@ void
 nlc_dir_add_ne(xlator_t *this, inode_t *inode, const char *name);
 
 void
+nlc_dir_remove_ne(xlator_t *this, inode_t *parent, const char *name);
+
+void
 nlc_local_wipe(nlc_local_t *local);
 
 nlc_local_t *
