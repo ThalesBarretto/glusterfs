@@ -159,7 +159,7 @@ inode_get_ctx_index(inode_table_t *table, xlator_t *xlator)
 static int
 hash_dentry(inode_t *parent, const char *name, int mod)
 {
-    int hash = 0;
+    unsigned int hash = 0;
     int ret = 0;
 
     hash = *name;
