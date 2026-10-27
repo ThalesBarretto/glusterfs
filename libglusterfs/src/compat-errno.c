@@ -9,13 +9,15 @@
 */
 
 #include <stdint.h>
+#include <pthread.h>
 
 #include "glusterfs/compat-errno.h"
 
 static int32_t gf_error_to_errno_array[1024];
 static int32_t gf_errno_to_error_array[1024];
 
-static int32_t gf_compat_errno_init_done;
+/* the tables are filled on first use, from any thread */
+static pthread_once_t gf_compat_errno_once = PTHREAD_ONCE_INIT;
 
 #ifdef GF_SOLARIS_HOST_OS
 static void
@@ -931,10 +933,7 @@ gf_errno_to_error(int32_t op_errno)
     if (op_errno == 0)
         return op_errno;
 
-    if (!gf_compat_errno_init_done) {
-        init_errno_arrays();
-        gf_compat_errno_init_done = 1;
-    }
+    (void)pthread_once(&gf_compat_errno_once, init_errno_arrays);
 
     if ((op_errno > GF_ERROR_CODE_SUCCESS) &&
         (op_errno < GF_ERROR_CODE_UNKNOWN))
@@ -949,10 +948,7 @@ gf_error_to_errno(int32_t error)
     if (error == 0)
         return error;
 
-    if (!gf_compat_errno_init_done) {
-        init_errno_arrays();
-        gf_compat_errno_init_done = 1;
-    }
+    (void)pthread_once(&gf_compat_errno_once, init_errno_arrays);
 
     if ((error > GF_ERROR_CODE_SUCCESS) && (error < GF_ERROR_CODE_UNKNOWN))
         return gf_error_to_errno_array[error];
