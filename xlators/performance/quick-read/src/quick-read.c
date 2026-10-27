@@ -1015,7 +1015,11 @@ qr_inodectx_dump(xlator_t *this, inode_t *inode)
         0,
     };
 
-    qr_inode = qr_inode_ctx_get(this, inode);
+    /* statedump holds the inode table lock: don't block on inode->lock */
+    if (TRY_LOCK(&inode->lock))
+        goto out;
+    qr_inode = __qr_inode_ctx_get(this, inode);
+    UNLOCK(&inode->lock);
     if (!qr_inode)
         goto out;
 

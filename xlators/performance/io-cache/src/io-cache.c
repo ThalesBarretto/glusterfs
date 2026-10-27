@@ -1982,7 +1982,11 @@ ioc_inode_dump(xlator_t *this, inode_t *inode)
 
     gf_proc_dump_build_key(key_prefix, "io-cache", "inode");
 
-    inode_ctx_get(inode, this, &tmp_ioc_inode);
+    /* statedump holds the inode table lock: don't block on inode->lock */
+    if (TRY_LOCK(&inode->lock))
+        goto out;
+    __inode_ctx_get(inode, this, &tmp_ioc_inode);
+    UNLOCK(&inode->lock);
     ioc_inode = (ioc_inode_t *)(long)tmp_ioc_inode;
     if (ioc_inode == NULL)
         goto out;

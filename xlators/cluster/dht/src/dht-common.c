@@ -11263,26 +11263,37 @@ out:
 }
 
 int
-dht_inode_ctx_layout_get(inode_t *inode, xlator_t *this, dht_layout_t **layout)
+__dht_inode_ctx_layout_get(inode_t *inode, xlator_t *this,
+                           dht_layout_t **layout)
 {
     dht_inode_ctx_t *ctx = NULL;
     int ret = -1;
     uint64_t ctx_int = 0;
 
+    ret = __inode_ctx_get(inode, this, &ctx_int);
+    if (!ret) {
+        ctx = (dht_inode_ctx_t *)(uintptr_t)ctx_int;
+        if (ctx && ctx->layout) {
+            if (layout) {
+                *layout = ctx->layout;
+                dht_layout_ref(ctx->layout);
+            }
+        } else {
+            ret = -1;
+        }
+    }
+
+    return ret;
+}
+
+int
+dht_inode_ctx_layout_get(inode_t *inode, xlator_t *this, dht_layout_t **layout)
+{
+    int ret = -1;
+
     LOCK(&inode->lock);
     {
-        ret = __inode_ctx_get(inode, this, &ctx_int);
-        if (!ret) {
-            ctx = (dht_inode_ctx_t *)(uintptr_t)ctx_int;
-            if (ctx && ctx->layout) {
-                if (layout) {
-                    *layout = ctx->layout;
-                    dht_layout_ref(ctx->layout);
-                }
-            } else {
-                ret = -1;
-            }
-        }
+        ret = __dht_inode_ctx_layout_get(inode, this, layout);
     }
     UNLOCK(&inode->lock);
 

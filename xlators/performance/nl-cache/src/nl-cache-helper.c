@@ -1106,7 +1106,11 @@ nlc_dump_inodectx(xlator_t *this, inode_t *inode)
     nlc_ne_t *ne = NULL;
     nlc_ne_t *tmp1 = NULL;
 
-    nlc_ctx = nlc_inode_ctx_get(this, inode);
+    /* statedump holds the inode table lock: don't block on inode->lock */
+    if (TRY_LOCK(&inode->lock))
+        goto out;
+    nlc_ctx = __nlc_inode_ctx_get(this, inode);
+    UNLOCK(&inode->lock);
 
     if (!nlc_ctx)
         goto out;

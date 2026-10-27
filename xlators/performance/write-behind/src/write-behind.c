@@ -2884,7 +2884,13 @@ wb_inode_dump(xlator_t *this, inode_t *inode)
         goto out;
     }
 
-    wb_inode = wb_inode_ctx_get(this, inode);
+    /* statedump holds the inode table lock: don't block on inode->lock */
+    if (TRY_LOCK(&inode->lock)) {
+        ret = 0;
+        goto out;
+    }
+    wb_inode = __wb_inode_ctx_get(this, inode);
+    UNLOCK(&inode->lock);
     if (wb_inode == NULL) {
         ret = 0;
         goto out;

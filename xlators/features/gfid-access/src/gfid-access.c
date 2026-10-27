@@ -1360,7 +1360,11 @@ ga_dump_inodectx(xlator_t *this, inode_t *inode)
         0,
     };
 
-    ret = inode_ctx_get(inode, this, &value);
+    /* statedump holds the inode table lock: don't block on inode->lock */
+    if (TRY_LOCK(&inode->lock))
+        return 0;
+    ret = __inode_ctx_get(inode, this, &value);
+    UNLOCK(&inode->lock);
     if (ret == 0) {
         tmp_inode = (void *)(uintptr_t)value;
         gf_proc_dump_build_key(key_prefix, this->name, "inode");

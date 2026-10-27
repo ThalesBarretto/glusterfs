@@ -157,7 +157,11 @@ dht_inodectx_dump(xlator_t *this, inode_t *inode)
     if (!inode)
         goto out;
 
-    ret = dht_inode_ctx_layout_get(inode, this, &layout);
+    /* statedump holds the inode table lock: don't block on inode->lock */
+    if (TRY_LOCK(&inode->lock))
+        goto out;
+    ret = __dht_inode_ctx_layout_get(inode, this, &layout);
+    UNLOCK(&inode->lock);
 
     if ((ret != 0) || !layout)
         return ret;

@@ -761,7 +761,11 @@ ra_fdctx_dump(xlator_t *this, fd_t *fd)
         0,
     };
 
-    file = fd_ctx_get_ptr(fd, this);
+    /* statedump holds the inode table lock: don't block on fd->lock */
+    if (TRY_LOCK(&fd->lock))
+        goto out;
+    file = __fd_ctx_get_ptr(fd, this);
+    UNLOCK(&fd->lock);
     if (file == NULL) {
         ret = 0;
         goto out;

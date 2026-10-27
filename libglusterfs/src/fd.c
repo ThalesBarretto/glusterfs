@@ -1053,7 +1053,11 @@ fd_ctx_dump(fd_t *fd, char *prefix)
         goto out;
     }
 
-    LOCK(&fd->lock);
+    /* Called by inode_dump() with the inode table lock held, while fops
+     * hold fd->lock and call inode_ref(), which takes the table lock: like
+     * the rest of the statedump, don't block here. */
+    if (TRY_LOCK(&fd->lock))
+        goto out;
     {
         if (fd->_ctx != NULL) {
             fd_ctx = GF_CALLOC(fd->xl_count, sizeof(*fd_ctx),

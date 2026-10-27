@@ -1110,6 +1110,9 @@ int32_t
 gf_defrag_handle_hardlink(xlator_t *this, loc_t *loc, int *fop_errno);
 
 int
+__dht_inode_ctx_layout_get(inode_t *inode, xlator_t *this,
+                           dht_layout_t **layout);
+int
 dht_inode_ctx_layout_get(inode_t *inode, xlator_t *this,
                          dht_layout_t **layout_int);
 int
