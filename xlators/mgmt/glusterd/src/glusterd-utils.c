@@ -6176,6 +6176,7 @@ out:
     struct dirent *dp = NULL;
     DIR *dirp = NULL;
     size_t len = 0;
+    ssize_t link_len = 0;
     int fd = -1;
     char path[PATH_MAX] = "";
     struct dirent scratch[2] = {
@@ -6207,10 +6208,10 @@ out:
         if (!strtol(dp->d_name, (char **)NULL, 10))
             continue;
 
-        len = readlinkat(fd, dp->d_name, path, sizeof(path) - 1);
-        /* TODO: handle len == -1 -> error condition in readlinkat */
-        if (len > 1) {
-            path[len] = '\0';
+        /* -1 when the brick closed the descriptor since the readdir */
+        link_len = readlinkat(fd, dp->d_name, path, sizeof(path) - 1);
+        if (link_len > 1) {
+            path[link_len] = '\0';
             if (!strcmp(path, brickpath)) {
                 brick_path = gf_strdup(path);
                 break;
