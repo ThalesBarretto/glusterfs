@@ -7431,6 +7431,7 @@ glusterd_handle_snap_limit(dict_t *dict, dict_t *rsp_dict)
     uint64_t limit = 0;
     int64_t count = 0;
     glusterd_snap_t *snap = NULL;
+    char snapname[GLUSTERD_MAX_SNAP_NAME] = "";
     glusterd_volinfo_t *tmp_volinfo = NULL;
     uint64_t opt_max_hard = GLUSTERD_SNAPS_MAX_HARD_LIMIT;
     uint64_t opt_max_soft = GLUSTERD_SNAPS_DEF_SOFT_LIMIT_PERCENT;
@@ -7509,23 +7510,25 @@ glusterd_handle_snap_limit(dict_t *dict, dict_t *rsp_dict)
         {
             snap->snap_status = GD_SNAP_STATUS_DECOMMISSION;
             ret = glusterd_store_snap(snap);
-            if (ret) {
-                gf_msg(this->name, GF_LOG_ERROR, 0,
-                       GD_MSG_SNAP_OBJECT_STORE_FAIL,
-                       "could "
-                       "not store snap object %s",
-                       snap->snapname);
-                goto unlock;
-            }
+        }
+        UNLOCK(&snap->lock);
 
+        if (ret) {
+            gf_msg(this->name, GF_LOG_ERROR, 0, GD_MSG_SNAP_OBJECT_STORE_FAIL,
+                   "could "
+                   "not store snap object %s",
+                   snap->snapname);
+        } else {
+            /* glusterd_snap_remove() frees snap (with force, also when it
+             * fails to delete the snap from the store), so its lock cannot
+             * be held across the call and snap is not used afterwards. */
+            snprintf(snapname, sizeof(snapname), "%s", snap->snapname);
             ret = glusterd_snap_remove(rsp_dict, snap, _gf_true, _gf_true,
                                        _gf_false);
             if (ret)
                 gf_msg(this->name, GF_LOG_WARNING, 0, GD_MSG_SNAP_REMOVE_FAIL,
-                       "failed to remove snap %s", snap->snapname);
+                       "failed to remove snap %s", snapname);
         }
-    unlock:
-        UNLOCK(&snap->lock);
         if (is_origin_glusterd(dict) == _gf_true) {
             if (ret)
                 gf_event(EVENT_SNAPSHOT_DELETE_FAILED, "%s", msg);
