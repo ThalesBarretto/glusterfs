@@ -1198,8 +1198,14 @@ ec_xattrop_cbk(call_frame_t *frame, void *cookie, xlator_t *this,
         link = fop->data;
         if (link) {
             /*Keep a note of if the dirty is already set or not*/
-            link->dirty[0] |= (dirty[0] != 0);
-            link->dirty[1] |= (dirty[1] != 0);
+            /* The other bricks' replies OR into the same link: a reply from
+             * a clean brick must not write back a stale 0. */
+            LOCK(&fop->lock);
+            {
+                link->dirty[0] |= (dirty[0] != 0);
+                link->dirty[1] |= (dirty[1] != 0);
+            }
+            UNLOCK(&fop->lock);
         }
     }
 
