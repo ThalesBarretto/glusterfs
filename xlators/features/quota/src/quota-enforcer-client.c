@@ -257,6 +257,7 @@ _quota_enforcer_lookup(void *data)
     loc_t *loc = NULL;
     xlator_t *this = NULL;
     char *dir_path = NULL;
+    char gfid_str[GF_UUID_BUF_SIZE] = "";
 
     frame = data;
     local = frame->local;
@@ -284,10 +285,11 @@ _quota_enforcer_lookup(void *data)
     else
         req.bname = "";
 
-    if (loc->path)
-        dir_path = (char *)loc->path;
-    else
-        dir_path = "";
+    /* A failed submit runs quota_enforcer_lookup_cbk() before returning,
+     * which can complete the fop and wipe local->validate_loc: keep what
+     * the warning below needs. */
+    dir_path = gf_strdup(loc->path ? loc->path : "");
+    uuid_utoa_r((unsigned char *)req.gfid, gfid_str);
 
     ret = quota_enforcer_submit_request(
         &req, frame, priv->quota_enforcer, GF_AGGREGATOR_LOOKUP, this,
@@ -297,9 +299,10 @@ _quota_enforcer_lookup(void *data)
         gf_msg(this->name, GF_LOG_WARNING, 0, Q_MSG_RPC_SUBMIT_FAILED,
                "Couldn't send the request to "
                "fetch cluster wide size of directory (path:%s gfid:%s)",
-               dir_path, req.gfid);
+               dir_path ? dir_path : "", gfid_str);
     }
 
+    GF_FREE(dir_path);
     GF_FREE(req.xdata.xdata_val);
 
     return;
