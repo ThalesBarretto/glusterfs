@@ -2432,6 +2432,7 @@ gd_brick_op_phase(glusterd_op_t op, dict_t *op_ctx, dict_t *req_dict,
 {
     glusterd_pending_node_t *pending_node = NULL;
     glusterd_pending_node_t *tmp = NULL;
+    glusterd_pending_node_t *cur = NULL; /* node whose rpc is held */
     struct cds_list_head selected = {
         0,
     };
@@ -2443,6 +2444,8 @@ gd_brick_op_phase(glusterd_op_t op, dict_t *op_ctx, dict_t *req_dict,
     int32_t cmd = GF_OP_CMD_NONE;
     glusterd_volinfo_t *volinfo = NULL;
 
+    CDS_INIT_LIST_HEAD(&selected);
+
     rsp_dict = dict_new();
     if (!rsp_dict) {
         gf_smsg(this->name, GF_LOG_ERROR, errno, GD_MSG_DICT_CREATE_FAIL, NULL);
@@ -2450,7 +2453,6 @@ gd_brick_op_phase(glusterd_op_t op, dict_t *op_ctx, dict_t *req_dict,
         goto out;
     }
 
-    CDS_INIT_LIST_HEAD(&selected);
     ret = glusterd_op_bricks_select(op, req_dict, op_errstr, &selected,
                                     rsp_dict);
     if (ret) {
@@ -2472,6 +2474,7 @@ gd_brick_op_phase(glusterd_op_t op, dict_t *op_ctx, dict_t *req_dict,
     brick_count = 0;
     cds_list_for_each_entry_safe(pending_node, tmp, &selected, list)
     {
+        cur = pending_node;
         rpc = glusterd_pending_node_get_rpc(pending_node);
         /* In the case of rebalance if the rpc object is null, we try to
          * create the rpc object. if the rebalance daemon is down, it returns
@@ -2515,14 +2518,23 @@ gd_brick_op_phase(glusterd_op_t op, dict_t *op_ctx, dict_t *req_dict,
 
         brick_count++;
         glusterd_pending_node_put_rpc(pending_node);
+        cur = NULL;
+        cds_list_del_init(&pending_node->list);
         GF_FREE(pending_node);
     }
 
-    pending_node = NULL;
     ret = 0;
 out:
-    if (pending_node && pending_node->node)
-        glusterd_pending_node_put_rpc(pending_node);
+    if (cur && cur->node)
+        glusterd_pending_node_put_rpc(cur);
+
+    /* Nodes the loop did not finish: every early exit and the client-list
+     * break leave the current node and all later ones on the list. */
+    cds_list_for_each_entry_safe(pending_node, tmp, &selected, list)
+    {
+        cds_list_del_init(&pending_node->list);
+        GF_FREE(pending_node);
+    }
 
     if (rsp_dict)
         dict_unref(rsp_dict);
