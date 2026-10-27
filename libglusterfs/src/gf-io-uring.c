@@ -566,6 +566,10 @@ gf_io_uring_cq_process(gf_io_worker_t *worker)
 
     current = CMM_LOAD_SHARED(*gf_io_uring.cq.head);
     while (caa_likely(CMM_LOAD_SHARED(*gf_io_uring.cq.tail) != current)) {
+        /* The kernel fills the CQE before it publishes it with a release
+         * store of the CQ tail. Order the tail load before the CQE read, or
+         * a weakly ordered CPU can return the slot's previous contents. */
+        cmm_smp_rmb();
         cqe = gf_io_uring.cq.cqes[current & gf_io_uring.cq.mask];
 
         head = uatomic_cmpxchg(gf_io_uring.cq.head, current, current + 1);
