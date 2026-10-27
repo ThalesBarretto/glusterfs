@@ -130,8 +130,12 @@ dht_rename_dir_cbk(call_frame_t *frame, void *cookie, xlator_t *this,
                "Rename %s -> %s on %s failed, (gfid = %s)", local->loc.path,
                local->loc2.path, prev->name, gfid);
 
-        local->op_ret = op_ret;
-        local->op_errno = op_errno;
+        LOCK(&frame->lock);
+        {
+            local->op_ret = op_ret;
+            local->op_errno = op_errno;
+        }
+        UNLOCK(&frame->lock);
         goto unwind;
     }
     /* TODO: construct proper stbuf for dir */
@@ -139,11 +143,16 @@ dht_rename_dir_cbk(call_frame_t *frame, void *cookie, xlator_t *this,
      * FIXME: is this the correct way to build stbuf and
      * parent bufs?
      */
-    dht_iatt_merge(this, &local->stbuf, stbuf);
-    dht_iatt_merge(this, &local->preoldparent, preoldparent);
-    dht_iatt_merge(this, &local->postoldparent, postoldparent);
-    dht_iatt_merge(this, &local->preparent, prenewparent);
-    dht_iatt_merge(this, &local->postparent, postnewparent);
+    /* the replies of the other subvolumes merge into the same local */
+    LOCK(&frame->lock);
+    {
+        dht_iatt_merge(this, &local->stbuf, stbuf);
+        dht_iatt_merge(this, &local->preoldparent, preoldparent);
+        dht_iatt_merge(this, &local->postoldparent, postoldparent);
+        dht_iatt_merge(this, &local->preparent, prenewparent);
+        dht_iatt_merge(this, &local->postparent, postnewparent);
+    }
+    UNLOCK(&frame->lock);
 
 unwind:
     this_call_cnt = dht_frame_return(frame);

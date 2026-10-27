@@ -1052,8 +1052,13 @@ dht_selfheal_dir_mkdir_cbk(call_frame_t *frame, void *cookie, xlator_t *this,
                 local->loc.path, "gfid=%s", gfid, NULL);
         goto out;
     }
-    dht_iatt_merge(this, &local->preparent, preparent);
-    dht_iatt_merge(this, &local->postparent, postparent);
+    /* the replies of the other subvolumes merge into the same local */
+    LOCK(&frame->lock);
+    {
+        dht_iatt_merge(this, &local->preparent, preparent);
+        dht_iatt_merge(this, &local->postparent, postparent);
+    }
+    UNLOCK(&frame->lock);
     ret = 0;
 
 out:
