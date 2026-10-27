@@ -1834,7 +1834,10 @@ __posix_fd_ctx_get(fd_t *fd, xlator_t *this, struct posix_fd **pfd_p,
 
     struct posix_private *priv = NULL;
 
-    pfd = __fd_ctx_get_ptr(fd, this);
+    /* The caller holds fd->inode->lock, which serializes the creation of
+     * posix's own context of an anonymous fd; the fd's context slots belong
+     * to fd->lock, which other xlators hold to get and set theirs. */
+    pfd = fd_ctx_get_ptr(fd, this);
     if (pfd) {
         ret = 0;
         goto out;
@@ -1906,7 +1909,7 @@ __posix_fd_ctx_get(fd_t *fd, xlator_t *this, struct posix_fd **pfd_p,
     pfd->dir = dir;
     pfd->flags = fd->flags;
 
-    ret = __fd_ctx_set(fd, this, (uint64_t)(long)pfd);
+    ret = fd_ctx_set(fd, this, (uint64_t)(long)pfd);
     if (ret != 0) {
         op_errno = ENOMEM;
         if (_fd != -1)
