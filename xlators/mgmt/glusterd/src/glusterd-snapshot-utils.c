@@ -3353,6 +3353,8 @@ glusterd_snap_unmount(xlator_t *this, glusterd_volinfo_t *volinfo)
                    retry_count);
             sleep(3);
         }
+        GF_FREE(brick_mount_path);
+        brick_mount_path = NULL;
     }
 
 out:
