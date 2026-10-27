@@ -110,16 +110,28 @@ disabled_loop:
     return ret;
 }
 
+static void
+afr_shd_healer_unlock(void *mutex)
+{
+    pthread_mutex_unlock((pthread_mutex_t *)mutex);
+}
+
 static int
 afr_shd_healer_wait(struct subvol_healer *healer)
 {
     int ret = 0;
 
+    /* fini cancels this thread (afr_destroy_healer_object), normally while
+     * it waits on healer->cond, and a thread cancelled in
+     * pthread_cond_timedwait() holds the mutex again: release it on
+     * cancellation, so that fini does not destroy a locked mutex. */
+    pthread_cleanup_push(afr_shd_healer_unlock, &healer->mutex);
     pthread_mutex_lock(&healer->mutex);
     {
         ret = __afr_shd_healer_wait(healer);
     }
     pthread_mutex_unlock(&healer->mutex);
+    pthread_cleanup_pop(0);
 
     return ret;
 }
@@ -1101,6 +1113,9 @@ afr_shd_full_healer(void *data)
     THIS = this = healer->this;
 
     for (;;) {
+        /* the full healer also idles in __afr_shd_healer_wait() and can be
+         * cancelled there holding the mutex: see afr_shd_healer_wait() */
+        pthread_cleanup_push(afr_shd_healer_unlock, &healer->mutex);
         pthread_mutex_lock(&healer->mutex);
         {
             run = __afr_shd_healer_wait(healer);
@@ -1108,6 +1123,7 @@ afr_shd_full_healer(void *data)
                 healer->running = _gf_false;
         }
         pthread_mutex_unlock(&healer->mutex);
+        pthread_cleanup_pop(0);
 
         if (!run)
             break;
