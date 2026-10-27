@@ -780,30 +780,49 @@ syncenv_processor(void *thdata)
 {
     struct syncproc *proc = NULL;
     struct synctask *task = NULL;
+#ifdef HAVE_TSAN_API
+    void *tsan_thread_fiber = NULL;
+    void *tsan_sched_fiber = NULL;
+#endif
+#ifdef HAVE_VALGRIND_API
+    unsigned stackid = 0;
+#endif
 
     proc = thdata;
 
 #ifdef HAVE_TSAN_API
-    proc->tsan.fiber = __tsan_create_fiber(0);
+    tsan_thread_fiber = __tsan_get_current_fiber();
+    tsan_sched_fiber = __tsan_create_fiber(0);
+    proc->tsan.fiber = tsan_sched_fiber;
     snprintf(proc->tsan.name, TSAN_THREAD_NAMELEN, "<sched of syncenv@%p>",
              proc);
     __tsan_set_fiber_name(proc->tsan.fiber, proc->tsan.name);
 #endif
 
 #ifdef HAVE_VALGRIND_API
-    proc->stackid = __valgrind_register_current_stack();
+    stackid = __valgrind_register_current_stack();
+    proc->stackid = stackid;
 #endif
 
     while ((task = syncenv_task(proc)) != NULL) {
         synctask_switchto(task);
     }
 
+    /* syncenv_task() cleared *proc before returning NULL, and
+     * __run() can already have given the slot to a new thread:
+     * from here on use only the local copies. */
+
 #ifdef HAVE_TSAN_API
-    __tsan_destroy_fiber(proc->tsan.fiber);
+    /* Every yield switches to the scheduler fiber, so after the first task
+     * the thread runs on it: go back to the thread's own before destroying
+     * it. */
+    if (__tsan_get_current_fiber() != tsan_thread_fiber)
+        __tsan_switch_to_fiber(tsan_thread_fiber, 0);
+    __tsan_destroy_fiber(tsan_sched_fiber);
 #endif
 
 #ifdef HAVE_VALGRIND_API
-    VALGRIND_STACK_DEREGISTER(proc->stackid);
+    VALGRIND_STACK_DEREGISTER(stackid);
 #endif
 
     return NULL;
