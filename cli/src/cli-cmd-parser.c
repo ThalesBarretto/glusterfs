@@ -1132,11 +1132,14 @@ cli_cmd_get_state_parse(struct cli_state *state, const char **words,
     }
 
 out:
+    if (ret && dict) {
+        dict_unref(dict);
+        dict = NULL;
+    }
+
+    /* only a parsed request: the caller unrefs *options either way */
     if (dict)
         *options = dict;
-
-    if (ret && dict)
-        dict_unref(dict);
 
     GF_FREE(daemon_name);
 
