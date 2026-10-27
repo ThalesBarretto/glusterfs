@@ -981,9 +981,15 @@ gf_history_changelog(char *changelog_dir, unsigned long start,
                 goto out;
             }
 
+            /* "in progress" must be published before the consumer can set
+             * it to done (0) or failed (-1) */
+            hist_jnl->hist_done = 1;
+
             /* spawn a thread for background parsing & publishing */
             ret = gf_thread_create(&consume_th, &attr, gf_history_consume,
                                    hist_data, "cloghcon");
+            if (ret)
+                hist_jnl->hist_done = -1; /* no consumer: failed */
             if (ret) {
                 gf_log(this->name, GF_LOG_ERROR,
                        "creation of consume parent-thread failed.");
@@ -1014,7 +1020,6 @@ out:
         return ret;
     }
 
-    hist_jnl->hist_done = 1;
     *actual_end = ts2;
 
     if (partial_history) {
