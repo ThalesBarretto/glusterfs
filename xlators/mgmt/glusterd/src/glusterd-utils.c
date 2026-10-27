@@ -2510,6 +2510,12 @@ compute_checksum(char *buf, const ssize_t size, uint32_t *checksum)
     }
 
     for (ret = 0; ret <= (size % 4); ret++) {
+        /* A chunk shorter than 4 bytes (the last read of a file whose
+         * length is 1-3 mod GF_CHECKSUM_BUF_SIZE) has nothing before
+         * buf[0]: count those positions as zero instead of reading the
+         * caller's stack. Every chunk of 4 bytes or more is unchanged. */
+        if ((size - 4) + ret < 0)
+            continue;
         checksum_buf[ret] ^= (buf[(size - 4) + ret] << ret);
     }
 
