@@ -1318,9 +1318,12 @@ test_handleops(int argc, char *argv[])
 
     glfs_lseek(fd, 10, SEEK_SET);
 
+    /* reading from offset 10 returns the last 22 of the 32 bytes written;
+     * neither buffer is NUL-terminated */
     ret = glfs_read(fd, readbuf, 32, 0);
-    if (memcmp(readbuf, writebuf, 32)) {
-        printf("Failed to read what I wrote: %s %s\n", readbuf, writebuf);
+    if (ret != 22 || memcmp(readbuf, writebuf + 10, 22)) {
+        printf("Failed to read what I wrote: %.*s %.22s\n", ret > 0 ? ret : 0,
+               readbuf, writebuf + 10);
         glfs_close(fd);
         printf("glfs_h_open tests: FAILED\n");
         goto out;
@@ -1438,7 +1441,7 @@ test_handleops(int argc, char *argv[])
 
     ret = glfs_read(fd, readbuf, 32, 0);
     if (memcmp(readbuf, writebuf, 32)) {
-        printf("Failed to read what I wrote: %s %s\n", writebuf, writebuf);
+        printf("Failed to read what I wrote: %.32s %.32s\n", readbuf, writebuf);
         printf("glfs_h_create_from_handle tests: FAILED\n");
         glfs_close(fd);
         goto out;
