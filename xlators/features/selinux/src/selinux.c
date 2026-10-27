@@ -15,6 +15,20 @@
 #include "selinux-mem-types.h"
 #include <glusterfs/compat-errno.h>
 
+/* Cookie for the getxattr callbacks: whether the reply carries
+ * SELINUX_GLUSTER_XATTR, to be renamed back to SELINUX_XATTR. Decided at
+ * wind time, because the name belongs to the caller and may be gone when
+ * the callback runs (e.g. a stack buffer of an xlator above, with
+ * io-threads below resuming the fop on another thread). The result is a
+ * static string or NULL, never the caller's pointer. */
+static void *
+selinux_getxattr_cookie(const char *xattr_name)
+{
+    if (xattr_name && !strcmp(xattr_name, SELINUX_GLUSTER_XATTR))
+        return (void *)SELINUX_GLUSTER_XATTR;
+    return NULL;
+}
+
 static int
 selinux_fgetxattr_cbk(call_frame_t *frame, void *cookie, xlator_t *this,
                       int op_ret, int op_errno, dict_t *dict, dict_t *xdata)
@@ -56,9 +70,10 @@ selinux_fgetxattr(call_frame_t *frame, xlator_t *this, fd_t *fd,
         xattr_name = SELINUX_GLUSTER_XATTR;
 
 off:
-    STACK_WIND_COOKIE(frame, selinux_fgetxattr_cbk, xattr_name,
-                      FIRST_CHILD(this), FIRST_CHILD(this)->fops->fgetxattr, fd,
-                      xattr_name, xdata);
+    STACK_WIND_COOKIE(frame, selinux_fgetxattr_cbk,
+                      selinux_getxattr_cookie(xattr_name), FIRST_CHILD(this),
+                      FIRST_CHILD(this)->fops->fgetxattr, fd, xattr_name,
+                      xdata);
     return 0;
 err:
     STACK_UNWIND_STRICT(fgetxattr, frame, op_ret, op_errno, NULL, xdata);
@@ -108,9 +123,10 @@ selinux_getxattr(call_frame_t *frame, xlator_t *this, loc_t *loc,
         xattr_name = SELINUX_GLUSTER_XATTR;
 
 off:
-    STACK_WIND_COOKIE(frame, selinux_getxattr_cbk, xattr_name,
-                      FIRST_CHILD(this), FIRST_CHILD(this)->fops->getxattr, loc,
-                      xattr_name, xdata);
+    STACK_WIND_COOKIE(frame, selinux_getxattr_cbk,
+                      selinux_getxattr_cookie(xattr_name), FIRST_CHILD(this),
+                      FIRST_CHILD(this)->fops->getxattr, loc, xattr_name,
+                      xdata);
     return 0;
 err:
     STACK_UNWIND_STRICT(getxattr, frame, op_ret, op_errno, NULL, xdata);
