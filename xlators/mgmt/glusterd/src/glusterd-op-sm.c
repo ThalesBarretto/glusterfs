@@ -2042,13 +2042,10 @@ _delete_reconfig_opt(dict_t *this, char *key, data_t *value, void *data)
 
     gf_msg_debug("glusterd", 0, "deleting dict with key=%s,value=%s", key,
                  value->data);
+    /* Called from dict_foreach(), key points into the pair dict_del()
+     * frees: nothing may use it after this. The scrubber option that goes
+     * with bitrot is removed by glusterd_options_reset(), after the walk. */
     dict_del(this, key);
-    /**Delete scrubber (pause/resume) option from the dictionary if bitrot
-     * option is going to be reset
-     * */
-    if (!strncmp(key, VKEY_FEATURES_BITROT, strlen(VKEY_FEATURES_BITROT))) {
-        dict_del_sizen(this, VKEY_FEATURES_SCRUB);
-    }
 out:
     return 0;
 }
@@ -2075,12 +2072,33 @@ glusterd_options_reset(glusterd_volinfo_t *volinfo, char *key,
     char *key_fixed = NULL;
     xlator_t *this = THIS;
     glusterd_svc_t *svc = NULL;
+    gf_boolean_t had_bitrot = _gf_false;
 
     GF_ASSERT(volinfo->dict);
     GF_ASSERT(key);
 
+    had_bitrot = (dict_get_sizen(volinfo->dict, VKEY_FEATURES_BITROT) != NULL);
+
     if (!strncmp(key, "all", 3)) {
         dict_foreach(volinfo->dict, _delete_reconfig_opt, is_force);
+    } else {
+        value = dict_get(volinfo->dict, key);
+        if (!value) {
+            gf_msg_debug(this->name, 0, "no value set for option %s", key);
+            goto out;
+        }
+        _delete_reconfig_opt(volinfo->dict, key, value, is_force);
+    }
+
+    /* Delete the scrubber (pause/resume) option when bitrot was reset.
+     * Not from _delete_reconfig_opt(): inside dict_foreach() the scrubber
+     * pair can be the next one the walk visits (the store reloads options
+     * in reverse order), and freeing it there would leave the walk on a
+     * freed pair. */
+    if (had_bitrot && !dict_get_sizen(volinfo->dict, VKEY_FEATURES_BITROT))
+        dict_del_sizen(volinfo->dict, VKEY_FEATURES_SCRUB);
+
+    if (!strncmp(key, "all", 3)) {
         ret = glusterd_enable_default_options(volinfo, NULL);
         if (ret) {
             gf_msg(this->name, GF_LOG_ERROR, 0, GD_MSG_FAIL_DEFAULT_OPT_SET,
@@ -2090,12 +2108,6 @@ glusterd_options_reset(glusterd_volinfo_t *volinfo, char *key,
             goto out;
         }
     } else {
-        value = dict_get(volinfo->dict, key);
-        if (!value) {
-            gf_msg_debug(this->name, 0, "no value set for option %s", key);
-            goto out;
-        }
-        _delete_reconfig_opt(volinfo->dict, key, value, is_force);
         ret = glusterd_enable_default_options(volinfo, key);
         if (ret) {
             gf_msg(this->name, GF_LOG_ERROR, 0, GD_MSG_FAIL_DEFAULT_OPT_SET,
