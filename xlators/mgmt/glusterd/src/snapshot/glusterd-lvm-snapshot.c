@@ -879,7 +879,8 @@ glusterd_lvm_snapshot_deactivate(glusterd_brickinfo_t *snap_brickinfo,
     }
 
     if (!glusterd_is_path_mounted(snap_brick_mount_path)) {
-        return 0;
+        ret = 0;
+        goto out;
     }
 
     /*umount2 system call doesn't cleanup mtab entry after un-mount.
