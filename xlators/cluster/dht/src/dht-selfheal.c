@@ -608,7 +608,6 @@ dht_selfheal_dir_xattr_cbk(call_frame_t *frame, void *cookie, xlator_t *this,
     xlator_t *subvol = NULL;
     struct iatt *stbuf = NULL;
     int i = 0;
-    int ret = 0;
     dht_layout_t *layout = NULL;
     int err = 0;
     int this_call_cnt = 0;
@@ -628,8 +627,8 @@ dht_selfheal_dir_xattr_cbk(call_frame_t *frame, void *cookie, xlator_t *this,
         err = op_errno;
     }
 
-    ret = dict_get_bin(xdata, DHT_IATT_IN_XDATA_KEY, (void **)&stbuf);
-    if (ret < 0) {
+    stbuf = dht_xdata_iatt(xdata);
+    if (!stbuf) {
         gf_uuid_unparse(local->loc.gfid, gfid);
         gf_msg_debug(this->name, 0,
                      "key = %s not present in dict"

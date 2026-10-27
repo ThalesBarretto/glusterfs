@@ -26,9 +26,9 @@ static void
 __afr_inode_write_finalize(call_frame_t *frame, xlator_t *this)
 {
     int i = 0;
-    int ret = 0;
     int read_subvol = 0;
     struct iatt *stbuf = NULL;
+    data_t *data = NULL;
     afr_local_t *local = NULL;
     afr_private_t *priv = NULL;
     afr_lock_t *lock = NULL;
@@ -59,10 +59,12 @@ __afr_inode_write_finalize(call_frame_t *frame, xlator_t *this)
                 args.ia_type = local->replies[i].poststat.ia_type;
                 break;
             } else {
-                ret = dict_get_bin(local->replies[i].xdata,
-                                   DHT_IATT_IN_XDATA_KEY, (void **)&stbuf);
-                if (ret)
+                /* an iatt only: a request sets the key as an int8 flag */
+                data = dict_get_sizen(local->replies[i].xdata,
+                                      DHT_IATT_IN_XDATA_KEY);
+                if (!data || (data->len != sizeof(struct iatt)))
                     continue;
+                stbuf = (struct iatt *)data->data;
                 gf_uuid_copy(args.gfid, stbuf->ia_gfid);
                 args.ia_type = stbuf->ia_type;
                 break;

@@ -5373,7 +5373,7 @@ dht_file_setxattr_cbk(call_frame_t *frame, void *cookie, xlator_t *this,
     if (local->call_cnt != 1)
         goto out;
 
-    ret = dict_get_bin(xdata, DHT_IATT_IN_XDATA_KEY, (void **)&stbuf);
+    stbuf = dht_xdata_iatt(xdata);
 
     if ((!op_ret) && !stbuf) {
         goto out;
@@ -5391,8 +5391,8 @@ dht_file_setxattr_cbk(call_frame_t *frame, void *cookie, xlator_t *this,
             return 0;
     }
 
-    /* Phase 1 of migration */
-    if (IS_DHT_MIGRATION_PHASE1(stbuf)) {
+    /* Phase 1 of migration (stbuf is NULL on a failed fop without one) */
+    if (stbuf && IS_DHT_MIGRATION_PHASE1(stbuf)) {
         inode = (local->fd) ? local->fd->inode : local->loc.inode;
 
         ret = dht_inode_ctx_get_mig_info(this, inode, &subvol1, &subvol2);
@@ -6084,7 +6084,7 @@ dht_file_removexattr_cbk(call_frame_t *frame, void *cookie, xlator_t *this,
     if (local->call_cnt != 1)
         goto out;
 
-    ret = dict_get_bin(xdata, DHT_IATT_IN_XDATA_KEY, (void **)&stbuf);
+    stbuf = dht_xdata_iatt(xdata);
 
     if ((!op_ret) && !stbuf) {
         goto out;
@@ -6103,8 +6103,8 @@ dht_file_removexattr_cbk(call_frame_t *frame, void *cookie, xlator_t *this,
             return 0;
     }
 
-    /* Phase 1 of migration */
-    if (IS_DHT_MIGRATION_PHASE1(stbuf)) {
+    /* Phase 1 of migration (stbuf is NULL on a failed fop without one) */
+    if (stbuf && IS_DHT_MIGRATION_PHASE1(stbuf)) {
         inode = (local->fd) ? local->fd->inode : local->loc.inode;
 
         ret = dht_inode_ctx_get_mig_info(this, inode, &subvol1, &subvol2);

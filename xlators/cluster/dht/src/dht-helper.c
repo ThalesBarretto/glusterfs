@@ -1065,6 +1065,21 @@ out:
         }                                                                      \
     } while (0)
 
+/* The iatt a reply carries under DHT_IATT_IN_XDATA_KEY, or NULL. A request
+ * sets the key as an int8 flag, so a fop that fails below and unwinds the
+ * request's own xdata returns that flag in its place. */
+struct iatt *
+dht_xdata_iatt(dict_t *xdata)
+{
+    data_t *data = NULL;
+
+    data = dict_get_sizen(xdata, DHT_IATT_IN_XDATA_KEY);
+    if (!data || (data->len != sizeof(struct iatt)))
+        return NULL;
+
+    return (struct iatt *)data->data;
+}
+
 int
 dht_iatt_merge(xlator_t *this, struct iatt *to, struct iatt *from)
 {

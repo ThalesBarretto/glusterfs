@@ -773,6 +773,9 @@ dht_local_init(call_frame_t *frame, loc_t *loc, fd_t *fd, glusterfs_fop_t fop);
 int
 dht_iatt_merge(xlator_t *this, struct iatt *to, struct iatt *from);
 
+struct iatt *
+dht_xdata_iatt(dict_t *xdata);
+
 xlator_t *
 dht_subvol_get_hashed(xlator_t *this, loc_t *loc);
 xlator_t *

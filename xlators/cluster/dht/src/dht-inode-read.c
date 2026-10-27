@@ -1208,11 +1208,16 @@ dht_read_iatt_from_xdata(dict_t *xdata, struct iatt *stbuf)
 {
     int ret = -1;
     int32_t mode = 0;
+    struct iatt *iatt = NULL;
 
     ret = dict_get_int32(xdata, DHT_MODE_IN_XDATA_KEY, &mode);
 
     if (ret) {
-        ret = dict_get_bin(xdata, DHT_IATT_IN_XDATA_KEY, (void **)&stbuf);
+        iatt = dht_xdata_iatt(xdata);
+        if (iatt) {
+            *stbuf = *iatt;
+            ret = 0;
+        }
     } else {
         stbuf->ia_prot = ia_prot_from_st_mode(mode);
         stbuf->ia_type = ia_type_from_st_mode(mode);
