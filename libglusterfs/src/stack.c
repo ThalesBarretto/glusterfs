@@ -281,7 +281,7 @@ gf_proc_dump_call_frame_to_dict(call_frame_t *call_frame, char *prefix,
                  "%ld.%" GF_PRI_SNSECONDS " -> %ld.%" GF_PRI_SNSECONDS,
                  tmp_frame.begin.tv_sec, tmp_frame.begin.tv_nsec,
                  tmp_frame.end.tv_sec, tmp_frame.end.tv_nsec);
-        ret = dict_set_str(dict, key, msg);
+        ret = dict_set_dynstr_with_alloc(dict, key, msg);
         if (ret)
             return;
     }
