@@ -241,6 +241,8 @@ glusterd_brick_op_build_payload(glusterd_op_t op,
 int
 glusterd_node_op_build_payload(glusterd_op_t op, gd1_mgmt_brick_op_req **req,
                                dict_t *dict);
+void
+glusterd_brick_op_req_free(gd1_mgmt_brick_op_req *req);
 
 dict_t *
 glusterd_op_init_commit_rsp_dict(glusterd_op_t op);

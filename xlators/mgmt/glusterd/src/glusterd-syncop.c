@@ -152,18 +152,6 @@ gd_commit_op_req_free(gd1_mgmt_commit_op_req *req)
     GF_FREE(req);
 }
 
-static void
-gd_brick_op_req_free(gd1_mgmt_brick_op_req *req)
-{
-    if (!req)
-        return;
-
-    if (req->dict.dict_val)
-        GF_FREE(req->dict.dict_val);
-    GF_FREE(req->input.input_val);
-    GF_FREE(req);
-}
-
 int
 gd_syncop_submit_request(struct rpc_clnt *rpc, void *req, void *local,
                          void *cookie, rpc_clnt_prog_t *prog, int procnum,
@@ -1641,7 +1629,7 @@ out:
                         gd_op_list[op]);
         }
     }
-    gd_brick_op_req_free(req);
+    glusterd_brick_op_req_free(req);
     return args.op_ret;
 }
 

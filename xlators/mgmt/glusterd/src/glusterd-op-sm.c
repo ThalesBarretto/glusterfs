@@ -492,6 +492,28 @@ out:
     return ret;
 }
 
+/* A brick op request built by glusterd_{brick,node}_op_build_payload()
+ * owns its name, its serialized input and its dict: free it with
+ * glusterd_brick_op_req_free() once it has been submitted. */
+static int
+glusterd_brick_op_req_set_name(gd1_mgmt_brick_op_req *req, const char *name)
+{
+    req->name = gf_strdup(name);
+    return req->name ? 0 : -1;
+}
+
+void
+glusterd_brick_op_req_free(gd1_mgmt_brick_op_req *req)
+{
+    if (!req)
+        return;
+
+    GF_FREE(req->name);
+    GF_FREE(req->dict.dict_val);
+    GF_FREE(req->input.input_val);
+    GF_FREE(req);
+}
+
 int
 glusterd_brick_op_build_payload(glusterd_op_t op,
                                 glusterd_brickinfo_t *brickinfo,
@@ -522,7 +544,9 @@ glusterd_brick_op_build_payload(glusterd_op_t op,
                 goto out;
             }
             brick_req->op = GLUSTERD_BRICK_TERMINATE;
-            brick_req->name = brickinfo->path;
+            ret = glusterd_brick_op_req_set_name(brick_req, brickinfo->path);
+            if (ret)
+                goto out;
             glusterd_set_brick_status(brickinfo, GF_BRICK_STOPPING);
             break;
         case GD_OP_PROFILE_VOLUME:
@@ -536,7 +560,9 @@ glusterd_brick_op_build_payload(glusterd_op_t op,
             }
 
             brick_req->op = GLUSTERD_BRICK_XLATOR_INFO;
-            brick_req->name = brickinfo->path;
+            ret = glusterd_brick_op_req_set_name(brick_req, brickinfo->path);
+            if (ret)
+                goto out;
 
             break;
         case GD_OP_HEAL_VOLUME: {
@@ -549,7 +575,9 @@ glusterd_brick_op_build_payload(glusterd_op_t op,
             }
 
             brick_req->op = GLUSTERD_BRICK_XLATOR_OP;
-            brick_req->name = "";
+            ret = glusterd_brick_op_req_set_name(brick_req, "");
+            if (ret)
+                goto out;
             ret = dict_get_int32(dict, "heal-op", (int32_t *)&heal_op);
             if (ret) {
                 gf_smsg(this->name, GF_LOG_ERROR, -ret, GD_MSG_DICT_GET_FAILED,
@@ -572,7 +600,9 @@ glusterd_brick_op_build_payload(glusterd_op_t op,
                 goto out;
             }
             brick_req->op = GLUSTERD_BRICK_STATUS;
-            brick_req->name = "";
+            ret = glusterd_brick_op_req_set_name(brick_req, "");
+            if (ret)
+                goto out;
             ret = dict_set_str_sizen(dict, "brick-name", brickinfo->path);
             if (ret) {
                 gf_smsg(this->name, GF_LOG_ERROR, -ret, GD_MSG_DICT_SET_FAILED,
@@ -604,7 +634,9 @@ glusterd_brick_op_build_payload(glusterd_op_t op,
                 goto out;
             }
             snprintf(name, sizeof(name), "%s-dht", volname);
-            brick_req->name = gf_strdup(name);
+            ret = glusterd_brick_op_req_set_name(brick_req, name);
+            if (ret)
+                goto out;
 
             break;
         case GD_OP_SNAP:
@@ -617,7 +649,9 @@ glusterd_brick_op_build_payload(glusterd_op_t op,
                 goto out;
             }
             brick_req->op = GLUSTERD_BRICK_BARRIER;
-            brick_req->name = brickinfo->path;
+            ret = glusterd_brick_op_req_set_name(brick_req, brickinfo->path);
+            if (ret)
+                goto out;
             break;
 
         default:
@@ -639,7 +673,7 @@ glusterd_brick_op_build_payload(glusterd_op_t op,
 
 out:
     if (ret && brick_req)
-        GF_FREE(brick_req);
+        glusterd_brick_op_req_free(brick_req);
     gf_msg_debug(this->name, 0, "Returning %d", ret);
     return ret;
 }
@@ -668,7 +702,9 @@ glusterd_node_op_build_payload(glusterd_op_t op, gd1_mgmt_brick_op_req **req,
             }
 
             brick_req->op = GLUSTERD_NODE_PROFILE;
-            brick_req->name = "";
+            ret = glusterd_brick_op_req_set_name(brick_req, "");
+            if (ret)
+                goto out;
 
             break;
 
@@ -682,7 +718,9 @@ glusterd_node_op_build_payload(glusterd_op_t op, gd1_mgmt_brick_op_req **req,
             }
 
             brick_req->op = GLUSTERD_NODE_STATUS;
-            brick_req->name = "";
+            ret = glusterd_brick_op_req_set_name(brick_req, "");
+            if (ret)
+                goto out;
 
             break;
 
@@ -705,7 +743,9 @@ glusterd_node_op_build_payload(glusterd_op_t op, gd1_mgmt_brick_op_req **req,
                 goto out;
             }
 
-            brick_req->name = gf_strdup(volname);
+            ret = glusterd_brick_op_req_set_name(brick_req, volname);
+            if (ret)
+                goto out;
             break;
         default:
             goto out;
@@ -727,7 +767,7 @@ glusterd_node_op_build_payload(glusterd_op_t op, gd1_mgmt_brick_op_req **req,
 
 out:
     if (ret && brick_req)
-        GF_FREE(brick_req);
+        glusterd_brick_op_req_free(brick_req);
     gf_msg_debug(this->name, 0, "Returning %d", ret);
     return ret;
 }

@@ -2224,8 +2224,7 @@ glusterd_brick_op(call_frame_t *frame, xlator_t *this, void *data)
             if (pending_node->type == GD_NODE_REBALANCE) {
                 opinfo.brick_pending_count = 0;
                 ret = 0;
-                GF_FREE(req->input.input_val);
-                GF_FREE(req);
+                glusterd_brick_op_req_free(req);
                 req = NULL;
                 GLUSTERD_STACK_DESTROY(dummy_frame);
 
@@ -2247,8 +2246,7 @@ glusterd_brick_op(call_frame_t *frame, xlator_t *this, void *data)
         ret = glusterd_submit_request(
             rpc, req, dummy_frame, priv->gfs_mgmt, req->op, NULL, this,
             glusterd_brick_op_cbk, (xdrproc_t)xdr_gd1_mgmt_brick_op_req);
-        GF_FREE(req->input.input_val);
-        GF_FREE(req);
+        glusterd_brick_op_req_free(req);
         req = NULL;
 
         if (!ret)
@@ -2264,6 +2262,8 @@ glusterd_brick_op(call_frame_t *frame, xlator_t *this, void *data)
     opinfo.brick_pending_count = pending_bricks;
 
 out:
+    /* only set when a payload was built and not submitted */
+    glusterd_brick_op_req_free(req);
 
     if (ret)
         opinfo.op_ret = ret;
