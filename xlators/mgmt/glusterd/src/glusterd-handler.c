@@ -3902,7 +3902,12 @@ glusterd_deprobe_begin(rpcsvc_request_t *req, const char *hoststr, int port,
     event->ctx = ctx;
 
     event->peername = gf_strdup(hoststr);
-    gf_uuid_copy(event->peerid, uuid);
+    /* uuid is NULL for a peer that is listed but has no uuid yet (probed,
+     * handshake not completed): the event stays zeroed and the state
+     * machine then finds the peer by event->peername, as
+     * glusterd_peerinfo_find() did above. */
+    if (uuid)
+        gf_uuid_copy(event->peerid, uuid);
 
     ret = glusterd_friend_sm_inject_event(event);
 
