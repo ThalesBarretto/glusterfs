@@ -4917,7 +4917,9 @@ glusterd_get_volume_opts(rpcsvc_request_t *req, dict_t *dict)
             }
 
             if (gd_is_global_option(key)) {
-                char warn_str[] =
+                /* static: the dict keeps this pointer until it is
+                 * serialized, after this block */
+                static char warn_str[] =
                     "Warning: support to get \
                                         global option value using volume get \
                                         <volname>` will be deprecated from \
