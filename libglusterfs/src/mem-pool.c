@@ -65,7 +65,7 @@ __gf_mem_trailer_read(uint8_t *trailer)
 
     int i;
     for (i = GF_MEM_TRAILER_SIZE - 1; i > 0; i--) {
-        magic |= (gf_mem_magic_t)(*trailer++ << (i * 8));
+        magic |= (gf_mem_magic_t)*trailer++ << (i * 8);
     }
     magic |= (gf_mem_magic_t)*trailer;
 
