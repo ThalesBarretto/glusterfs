@@ -177,6 +177,7 @@ cluster_markerxtime_cbk(call_frame_t *frame, void *cookie, xlator_t *this,
 {
     int32_t callcnt = 0;
     uint32_t *net_timebuf = NULL;
+    int timebuf_len = 0;
     uint32_t host_timebuf[2] = {
         0,
     };
@@ -197,7 +198,10 @@ cluster_markerxtime_cbk(call_frame_t *frame, void *cookie, xlator_t *this,
             goto unlock;
         }
 
-        if (dict_get_ptr(dict, marker_xattr, (void **)&net_timebuf)) {
+        /* the value comes from a brick: it must hold two 32-bit words */
+        if (dict_get_ptr_and_len(dict, marker_xattr, (void **)&net_timebuf,
+                                 &timebuf_len) ||
+            (timebuf_len < (int)sizeof(host_timebuf))) {
             local->count[MCNT_NOTFOUND]++;
             UNLOCK(&frame->lock);
             gf_log(this->name, GF_LOG_WARNING,
@@ -299,6 +303,7 @@ int
 gf_get_min_stime(xlator_t *this, dict_t *dst, char *key, data_t *value)
 {
     int ret = -1;
+    int net_len = 0;
     uint32_t *net_timebuf = NULL;
     uint32_t *value_timebuf = NULL;
     uint32_t host_timebuf[2] = {
@@ -308,9 +313,12 @@ gf_get_min_stime(xlator_t *this, dict_t *dst, char *key, data_t *value)
         0,
     };
 
-    /* stime should be minimum of all the other nodes */
-    ret = dict_get_bin(dst, key, (void **)&net_timebuf);
-    if (ret < 0) {
+    /* stime should be minimum of all the other nodes. The entry already in
+     * dst can be a brick's own value (the first reply's dict): a short one
+     * is replaced like a missing one */
+    ret = dict_get_ptr_and_len(dst, key, (void **)&net_timebuf, &net_len);
+    if ((ret < 0) || (net_len < (int)sizeof(host_timebuf))) {
+        ret = -ENOMEM;
         net_timebuf = GF_CALLOC(1, sizeof(int64_t), gf_common_mt_char);
         if (!net_timebuf)
             goto out;
@@ -323,7 +331,8 @@ gf_get_min_stime(xlator_t *this, dict_t *dst, char *key, data_t *value)
     }
 
     value_timebuf = data_to_bin(value);
-    if (!value_timebuf) {
+    /* the value comes from a brick: it must hold two 32-bit words */
+    if (!value_timebuf || (value->len < sizeof(host_value_timebuf))) {
         gf_log(this->name, GF_LOG_WARNING,
                "key=%s: getting value of stime failed", key);
         ret = -1;
@@ -356,6 +365,7 @@ int
 gf_get_max_stime(xlator_t *this, dict_t *dst, char *key, data_t *value)
 {
     int ret = -ENOMEM;
+    int net_len = 0;
     uint32_t *net_timebuf = NULL;
     uint32_t *value_timebuf = NULL;
     uint32_t host_timebuf[2] = {
@@ -365,9 +375,12 @@ gf_get_max_stime(xlator_t *this, dict_t *dst, char *key, data_t *value)
         0,
     };
 
-    /* stime should be maximum of all the other nodes */
-    ret = dict_get_bin(dst, key, (void **)&net_timebuf);
-    if (ret < 0) {
+    /* stime should be maximum of all the other nodes. The entry already in
+     * dst can be a brick's own value (the first reply's dict): a short one
+     * is replaced like a missing one */
+    ret = dict_get_ptr_and_len(dst, key, (void **)&net_timebuf, &net_len);
+    if ((ret < 0) || (net_len < (int)sizeof(host_timebuf))) {
+        ret = -ENOMEM;
         net_timebuf = GF_CALLOC(1, sizeof(int64_t), gf_common_mt_char);
         if (!net_timebuf)
             goto out;
@@ -380,7 +393,8 @@ gf_get_max_stime(xlator_t *this, dict_t *dst, char *key, data_t *value)
     }
 
     value_timebuf = data_to_bin(value);
-    if (!value_timebuf) {
+    /* the value comes from a brick: it must hold two 32-bit words */
+    if (!value_timebuf || (value->len < sizeof(host_value_timebuf))) {
         gf_log(this->name, GF_LOG_WARNING,
                "key=%s: getting value of stime failed", key);
         ret = -EINVAL;
