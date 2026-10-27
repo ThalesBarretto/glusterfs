@@ -62,6 +62,18 @@ ec_trace(const char *event, ec_fop_data_t *fop, const char *fmt, ...)
     ec_t *ec = fop->xl->private;
     va_list args;
     int32_t ret;
+    gf_loglevel_t level;
+
+    /* gf_msg_trace() drops the message below TRACE only after every
+     * argument has been built: a vasprintf(), three ec_bin() conversions and
+     * unlocked reads of fop fields that other threads are changing, on each
+     * state transition and callback of every fop. Decide first, with the
+     * rule _gf_msg() applies (the xlator's level, else the process's). */
+    level = THIS->loglevel;
+    if (level == GF_LOG_NONE)
+        level = gf_log_get_loglevel();
+    if (level < GF_LOG_TRACE)
+        return;
 
     va_start(args, fmt);
     ret = vasprintf(&msg, fmt, args);
