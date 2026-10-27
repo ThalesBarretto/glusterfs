@@ -608,8 +608,8 @@ posix_set_mdata_xattr(xlator_t *this, const char *real_path, int fd,
         }
     }
 unlock:
-    UNLOCK(&inode->lock);
-out:
+    /* Copy the times while the lock still excludes another update of this
+     * inode's mdata: after the unlock the reply could mix two updates. */
     if (ret == 0 && stbuf) {
         stbuf->ia_ctime = mdata->ctime.tv_sec;
         stbuf->ia_ctime_nsec = mdata->ctime.tv_nsec;
@@ -618,7 +618,8 @@ out:
         stbuf->ia_atime = mdata->atime.tv_sec;
         stbuf->ia_atime_nsec = mdata->atime.tv_nsec;
     }
-
+    UNLOCK(&inode->lock);
+out:
     return ret;
 }
 
