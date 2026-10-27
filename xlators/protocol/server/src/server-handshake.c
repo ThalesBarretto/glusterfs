@@ -106,7 +106,7 @@ server_getspec(rpcsvc_request_t *req)
     ret = stbuf.st_size;
 
     if (ret > 0) {
-        rsp.spec = MALLOC((ret + 1) * sizeof(char));
+        rsp.spec = CALLOC(ret + 1, sizeof(char));
         if (!rsp.spec) {
             gf_msg(this->name, GF_LOG_ERROR, errno, 0, "no memory");
             ret = -1;
