@@ -1469,6 +1469,7 @@ dht_rename_lookup_cbk(call_frame_t *frame, void *cookie, xlator_t *this,
     int child_index = -1;
     gf_boolean_t is_src = _gf_false;
     loc_t *loc = NULL;
+    int ret = 0;
 
     child_index = (long)cookie;
 
@@ -1585,8 +1586,12 @@ dht_rename_lookup_cbk(call_frame_t *frame, void *cookie, xlator_t *this,
             goto fail;
         }
 
-        local->op_ret = dht_rename_create_links(frame);
-        if (local->op_ret < 0) {
+        /* Unless it fails, dht_rename_create_links() winds the rest of
+         * the rename, which can complete and free local on another
+         * thread before it returns: touch local only on failure. */
+        ret = dht_rename_create_links(frame);
+        if (ret < 0) {
+            local->op_ret = -1;
             local->op_errno = ENOMEM;
             goto fail;
         }
